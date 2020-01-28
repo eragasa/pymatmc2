@@ -1,0 +1,17 @@
+#! /bin/bash
+#PBS -A PAA0028
+#PBS -l walltime=3:59:00
+#PBS -l nodes=8:ppn=28
+#PBS -N aupt_pt21
+#PBS -j oe
+
+module load intel/16.0.3
+module load intel/16.0.8
+module load intelmpi/5.1.3 python/2.7
+
+cd $PBS_O_WORKDIR
+
+python mc2.py
+
+exit
+
