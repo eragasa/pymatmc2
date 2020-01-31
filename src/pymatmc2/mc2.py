@@ -9,6 +9,11 @@ import pdb
 import glob
 from scipy.optimize import nnls
 
+from pymatmc2 import constants
+
+k_B = constant.BOLTZMANN
+epsilon_0 = constant.COULUMB
+
 BOLTZMANN   = 1.38064852E-23
 COULOMB     = 1.60217662E-19
 INPUT_FILE  = 'mc2.in'
@@ -395,53 +400,130 @@ def prepare():
     r.add_results(RESULTS_FILE)
     r.tar_file()
 
+class ConfigurationFile:
 
-if not os.path.exists(INPUT_FILE):
-    save_log("No mc2.in file found!")
-    exit()
-with open(INPUT_FILE) as f:
-    lines = f.readlines()
-if len(lines) == 0:
-    save_log("The file mc2.in is empty!")
-    exit()
-for line in lines:
-    line = line.split('#', 1)[0].strip().split('=')
-    if line[0].strip() == 'MPI_VASP':
-        MPI_VASP = line[1].strip()
-    elif line[0].strip() == 'TEMPERATURE':
-        TEMPERATURE = float(line[1].strip())
-    elif line[0].strip() == 'FLIP_STEP':
-        FLIP_STEP = int(line[1].strip())
-    elif line[0].strip() == 'INITIAL_C':
-        INITIAL_C = list(line[1].strip().split(' '))
-        initial_c = [float(i) for i in INITIAL_C]
-    elif line[0].strip() == 'N_CELL':
-        N_CELL = int(line[1].strip())
+    def __init__(self):
+        self.path = None
+
+    def read(self, path):
+        if not isinstance(path, str):
+            raise TypeError()
+        self.path = path
+
+    def to_str(self):
+
+        return s
+    def write(self, path):
+        pass
+
+class MetropolisMonteCarlo
+
+    def __init__(self):
+        self.initial_state = None
+        self.iteration = 0
+        self.max_iterations = 1000
+    def run(self):
+        while True:
+
+
+class MultiCellMonteCarlo:
+    supported_calculators = ['VASP', 'LAMMPS']
+
+    def __init__(self, configuration=None):
+        self.cells = None
+        self.configuration = None
+
+        if configuration is not None:
+            if isinstance(configuration, str):
+                self.read_configuration(path=configuration)
+            else isinstance(configuration, ConfigurationFile):
+                self.configuration = configuration
+            self.read_configuration(path=configuration)
+            self._set_initial_state_from_configuration()
+    def read_configuration(self, path):
+        self.configuration = ConfigurationFile()
+        self.configuration.read(path=path)
+
+    def _set_initial_state_from_configuration(self):
+        n_cells = self.configuration.n_cells
+
+        self.initial_state = OrdereDict()
+        for i_cell in range(self.n_cells):
+            self.initial_state[i_cell] = OrderedDict()
+
+        for 
+            structure_path = self.configuration.initial_state[i_cell]['structure_path']
+            self.initial_state[i_cell] = Poscar()
+            self.structure.read(path=path)
+
+
+    def create_vasp_simulation(self):
+        pass
+
+    def create_lammps_simulation(self):
+        pass
+
+
+    def create_simulation(self, cell_name, simulation_type):
+        if simulation_type == 'vasp':
+            self.create_vasp_simulation()
+
+    def create_simulations(self):
+        if self.configuration is None:
+            msg = "Cannot run MC2 algorithm without an MC2 configuration"
+            raise ValueError(msg)
+
+        n_cells = self.configuration.n_cells
+        calculator_type = self.configuration.calculator_type
+        for i_cell in range(n_cells):
+
+if __name__ == "__main__":
+    if not os.path.exists(INPUT_FILE):
+        save_log("No mc2.in file found!")
+        exit()
+    with open(INPUT_FILE) as f:
+        lines = f.readlines()
+    if len(lines) == 0:
+        save_log("The file mc2.in is empty!")
+        exit()
+    for line in lines:
+        line = line.split('#', 1)[0].strip().split('=')
+        if line[0].strip() == 'MPI_VASP':
+            MPI_VASP = line[1].strip()
+        elif line[0].strip() == 'TEMPERATURE':
+            TEMPERATURE = float(line[1].strip())
+        elif line[0].strip() == 'FLIP_STEP':
+            FLIP_STEP = int(line[1].strip())
+        elif line[0].strip() == 'INITIAL_C':
+            INITIAL_C = list(line[1].strip().split(' '))
+            initial_c = [float(i) for i in INITIAL_C]
+        elif line[0].strip() == 'N_CELL':
+            N_CELL = int(line[1].strip())
 
 
 
-prepare()
-while True:
-    stop_check()
-    folders = get_structure('flip_alt')
-    if len(folders) == 0:
-        r1 = Results()
-        r1.step += 1
-        r1.add_results(REJECTED_FILE)
-        continue
-    for folder in folders:
-        run_job(folder)
-    r1, r2 = Results(), Results()
-    r2.read_next()
-    save_log('{:>5d} {}\n'.format(r2.step, time.strftime("%Y-%m-%d %H:%M")))
-    probability = np.exp((r1.total_energy - r2.total_energy) * N_CELL *
-                         COULOMB / BOLTZMANN / TEMPERATURE)
-    r2.probability = np.minimum(probability, 1.0)
-    if np.random.rand() < r2.probability:
-        r2.add_results(RESULTS_FILE)
-        r2.tar_file()
-        if r2.step >= 99999:
-            save_log("Maximum step 99999 reached.")
-            exit()
-    else:
-        r2.add_results(REJECTED_FILE)
+    prepare()
+    while True:
+        stop_check()
+        folders = get_structure('flip_alt')
+        if len(folders) == 0:
+            r1 = Results()
+            r1.step += 1
+            r1.add_results(REJECTED_FILE)
+            continue
+        for folder in folders:
+            run_job(folder)
+        r1, r2 = Results(), Results()
+        r2.read_next()
+        save_log('{:>5d} {}\n'.format(r2.step, time.strftime("%Y-%m-%d %H:%M")))
+        probability = np.exp((r1.total_energy - r2.total_energy) * N_CELL *
+                             COULOMB / BOLTZMANN / TEMPERATURE)
+        r2.probability = np.minimum(probability, 1.0)
+        if np.random.rand() < r2.probability:
+            r2.add_results(RESULTS_FILE)
+            r2.tar_file()
+            if r2.step >= 99999:
+                save_log("Maximum step 99999 reached.")
+                exit()
+        else:
+            r2.add_results(REJECTED_FILE)
