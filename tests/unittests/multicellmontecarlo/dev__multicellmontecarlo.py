@@ -1,15 +1,18 @@
+from mexm.simulation import VaspSimulation
 from multicellmontecarlo import MultiCellMonteCarlo
 
 if __name__ == "__main__":
     o_mc2 = MultiCellMonteCarlo()
     o_mc2.read_configuration(path='mc2.in')
-    print('vasp_mpi_bin',o_mc2.vasp_mpi_bin)
-
+    print('calculator_type:',o_mc2.calculator_type)
+    print('vasp_std_bin:',o_mc2.vasp_std_bin)
+    print('lammps_serial_bin:',o_mc2.lammps_serial_bin)
+    print('lammps_mpi_bin:',o_mc2.lammps_mpi_bin)
     o_mc2.prepare_simulations()
 
 
     while True:
-        stop_check()
+        o_mc2.check_for_stop_file()
         folders = get_structure('flip_alt')
         if len(folders) == 0:
             r1 = Results()

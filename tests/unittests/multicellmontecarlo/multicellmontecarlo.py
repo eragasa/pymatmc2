@@ -24,6 +24,7 @@ flip_flag = 0   # global dynamic variable for flip determination
 # MU_PTPT = -1.0102
 
 
+
 class Poscar(object):
     """Dealing with POSCAR from VASP."""
 
@@ -186,7 +187,7 @@ def make_vasp_simulation(
     elif isinstance(src_poscar, Incar):
         Incar.write(path=dst_incar_path)
     else:
-        raise TypeError('src-incar must either an Incar object or a path')
+        raise TypeError('src_incar must either an Incar object or a path')
 
     if isinstance(src_potcar, str):
         shutil.copy(src_potcar, dst_potcar_path)
@@ -386,12 +387,6 @@ def run_job(folder):
         exit()
 
 
-def stop_check():
-    """Check for manual stop."""
-    if os.path.exists(STOP_FILE):
-        os.remove(STOP_FILE)
-        save_log("Found stop file. Stopping...")
-        exit()
 
 
 
@@ -415,28 +410,54 @@ class MultiCellMonteCarlo:
         Properties:
                 
         """
-        try:
-            self.vasp_mpi_bin = os.environ['VASP_MPI_BIN']
-        except KeyError as e:
-            self.vasp_mpi_bin = None
+
+        # calculator paths
+        self.vasp_std_bin_ = None
+        self.lammps_serial_bin_ = None
+        self.lammps_mpi_bin_ = None
 
         self.temperature_ = None
         self.flip_step_ = None
         self.n_cells = None
         self.initial_concentration = None
-        self.calculator_type = 'vasp'
-        self.simulation_type = 'static'
+        self.calculator_type_ = 'vasp'
+        self.simulation_type_ = 'static'
 
-        self.results_path = 'results.out' 
+        self.results_path = 'results.out'
+
     @property
     def calculator_type(self):
         return self.calculator_type_
 
     @calculator_type.setter
     def calculator_type(self, calculator_type):
-        assert calculator_type in MultiCellMonteCarlo.calculator_types
+        calculator_type_ = calculator_type.lower()
+        if calculator_type_ not in MultiCellMonteCarlo.calculator_types:
+            msg = 'unsupported calculator_type: {}'.format(calculator_type)
+            raise ValueError(msg)
         self.calculator_type_ = calculator_type
 
+    @property
+    def vasp_std_bin(self):
+        return self.vasp_std_bin_
+
+    @vasp_std_bin.setter
+    def vasp_std_bin(self, vasp_std_bin):
+        if not os.path.isfile(vasp_std_bin):
+            msg = 'the path to vasp_std_bin is invalid: {}'.format(vasp_std_bin)
+            raise FileNotFoundError(msg)
+        self.vasp_std_bin_ = vasp_std_bin
+
+    @property
+    def lammps_serial_bin(self):
+        return self.lammps_serial_bin_
+
+    @lammps_serial_bin.setter
+    def lammps_serial_bin(self, lammps_serial_bin):
+        if not os.path.isfile(lammps_serial_bin):
+            msg = 'the path to lammps_serial_bin is invalid: {}'.format(lammps_serial_bin)
+            raise FileNotFoundError(msg)
+        self.lammps_serial_bin_ = lammps_serial_bin
     @property
     def simulation_type(self):
         return self.simulation_type_
@@ -445,7 +466,8 @@ class MultiCellMonteCarlo:
     def simulation_type(self, simulation_type):
         simulation_type_ = simulation_type.lower()
         if simulation_type_ not in MultiCellMonteCarlo.simulation_types:
-            raise ValueError('unsupported simulation type: {}'.format(simulation_type_))
+            msg = 'unsupported simulation_type: {}'.format(simulation_type_)
+            raise ValueError(msg)
         self.simulation_type_ = simulation_type_
 
     @property
@@ -456,7 +478,8 @@ class MultiCellMonteCarlo:
     def temperature(self, temperature):
         temperature_ = float(temperature)
         if temperature_ < 0:
-            raise ValueError('temperature must be greater than 0')
+            msg = 'temperature must be greater than 0'
+            raise ValueError(msg)
         self.temperature_ = temperature_
 
 
@@ -466,7 +489,7 @@ class MultiCellMonteCarlo:
             config_path (str): path to the multicell montecarlo path
         """
         self.read_configuration(path=config_path)
-        self.prepare_simulaion()
+        self.prepare_simulation()
 
     def read_configuration(self, path='mc2.in'):
         with open(path, 'r') as f:
@@ -543,7 +566,7 @@ class MultiCellMonteCarlo:
         required_files = ['INCAR', 'KPOINTS', 'POTCAR']
         for file_path in required_files:
             if not os.path.isfile(file_path):
-                mg = 'cannot find the file, {}'.format(file_path)
+                msg = 'cannot find the file, {}'.format(file_path)
                 self.log(msg)
                 raise ValueError(msg)
        
@@ -554,7 +577,7 @@ class MultiCellMonteCarlo:
             return
 
         self.remove_old_output_files()
-        clear_folders()
+        # clear_folders()
         line = '{:>{}}'.format('Step', 5)
         o = Poscar('OSCAR')
         for i in range(N_CELL):
@@ -564,6 +587,8 @@ class MultiCellMonteCarlo:
         for i in range(N_CELL):
             line += '{:>7}'.format('x_{}%'.format(i + 1))
         line += '{:>10}{:>5}\n'.format('E({:.0f}K)'.format(TEMPERATURE), 'P')
+        print(line)
+        exit()
         with open(RESULTS_FILE, 'w') as f:
             f.write(line)
         with open(REJECTED_FILE, 'w') as f:
@@ -578,6 +603,12 @@ class MultiCellMonteCarlo:
         r.tar_file()
 
 
+    def check_for_stop_file():
+        """Check for manual stop."""
+        if os.path.exists(STOP_FILE):
+            os.remove(STOP_FILE)
+            save_log("Found stop file. Stopping...")
+            exit()
 if __name__ == "__main__":
 
     if not os.path.exists(INPUT_FILE):

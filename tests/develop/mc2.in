@@ -1,0 +1,5 @@
+MPI_VASP    = mpiexec /users/PAS1061/osu0323/Apps/VASP/VASP_5.4.1_Owens/bin/vasp_std
+TEMPERATURE = 400.0
+FLIP_STEP   = 3
+INITIAL_C = 23 9
+N_CELL = 2
