@@ -1,0 +1,83 @@
+@startuml
+participant user
+participant cron
+participant filesystem
+participant torque
+database database
+
+group
+create overlord
+user --> overlord: start
+activate overlord
+overlord --> cron: add
+deactivate overlord
+activate cron
+cron -> cron: activate
+deactivate cron
+end
+
+group
+create mc2
+
+user -> mc2: start_mc2
+activate mc2
+mc2 --> filesystem: write_vasp_simulation()
+mc2 --> database: register_simulation()
+deactivate mc2
+end
+
+group
+--> cron: poll
+activate cron
+cron --> overlord: poll
+deactivate cron
+activate overlord
+overlord -> torque: qstat <<bash>>
+activate torque
+overlord <- torque: qstat <<stdout>>
+deactivate torque
+alt simulations finished
+        overlord -> database: update_simulations()
+end
+overlord -> database: req <<new simulations>>
+database -> overlord: rec <<new simulations>>
+overlord -> overlord: determine <<new simulations>>
+alt "is new simulations"
+    overlord --> filesystem: update <<incar>>
+    overlord --> torque: qsub <<bash>>
+    overlord --> database: update <<simulations.submitted>>
+    deactivate overlord
+end
+end
+
+group
+--> cron:poll
+activate cron
+cron --> mc2: poll
+deactivate cron
+activate mc2
+mc2 --> database: req <<simulation status>>
+database --> mc2: receive <<simulation status>>
+deactivate mc2
+end
+
+group
+user --> mc2: stop
+activate mc2
+mc2 --> cron: remove
+destroy mc2
+activate cron
+cron --> cron: deactivate
+deactivate cron
+end
+
+group
+user --> overlord: stop
+activate overlord
+overlord --> cron: remove
+destroy overlord
+activate cron
+cron --> cron: deactivate
+deactivate cron
+end
+@enduml
