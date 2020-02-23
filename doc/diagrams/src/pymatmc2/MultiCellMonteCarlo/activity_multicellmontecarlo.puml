@@ -1,0 +1,30 @@
+@startuml
+start
+partition MultiCellMonteCarloCode {
+    :startup sequence;
+    if (is_restart) then (false)
+        :first iteration;
+        :get initial composition;
+        :create_mc2_simulation;
+        :submit_mc2_simulation;
+        '(A)
+        'detach
+    else (true)
+        :determine restart point;
+        :check simulation status;
+        if (is_converged) then (false)
+            :determine next simulation;
+            :create_mc_simulation;
+            :submit_mc2_simulation;
+            '(A)
+            'detach
+
+        else (true)
+            end
+        endif
+    endif
+
+}
+
+
+@enduml

@@ -1,10 +1,10 @@
+
 class Results(object):
-    """Dealing with MC^2 results.
+    """Dealing with (MC)^2 results.
     """
 
-    def __init__(self):
+    def __init__(self, path):
         """Read current results."""
-        p = Poscar('OSCAR')
         #init_structs = glob.glob('POSCAR_*')
         self.total_cells = p.total_elements
         self.step = 0

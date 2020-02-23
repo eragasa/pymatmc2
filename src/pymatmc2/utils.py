@@ -1,3 +1,108 @@
+import os
+import tarfile
+import scipy.optimize 
+import numpy as np
+
+#### THIS IS THE STUFF I HAVE WRITTEN
+def validate_vasp_simulation_input_files_exist(path):
+    assert os.path.isdir(path)
+    vasp_required_files = ['INCAR', 'KPOINTS', 'POTCAR']
+    has_all_files = all([
+        os.path.isfile(os.path.join(path, k)) for k in vasp_required_files
+    ])
+    return has_all_files
+
+#TODO: arr needs to be broken down in arguments a and b 
+# once i figure out what it is
+#TODO: this algorithm uses a NNLS algoirthm, it should be able to overdetermine
+# the system and get statistical information out it!
+def get_ratio(
+    arr,
+    concentration_matrix,
+    concentration_total,
+    n_cell
+    ):
+    """Calculate cell ratios from (n+1)*n input.
+
+    f^1 c_1^1 + f^2 c_1^2 + f^3 c_1^3 = c_1
+    f^1 c_2^2 + f^2 c_2^2 + f^3 c_2^3 = c_2
+    f^1 c_3^2 + f^2 c_3^2 + f^3 c_3^3 = c_2
+
+    C f = c
+    C f - c = 0
+    Ax = b
+    then using an NNLS to solve the  problem.
+
+
+    Arguments:
+        arr (???): i'm assuming this is a numpy array???
+        concentration_matrix = a matrix of (m x n) where m is the number of cells,
+            and n is the number of chemical species.
+        n_cell: I should be able to get this from the dimension of the array
+
+    Returns:
+        np.ndarray: ratio for something
+    
+    Notes:
+        Uses the a non-negative least squares solver as described in:
+        Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM
+    
+    """
+    n = n_cell
+    concentration_matrix = arr[:, :n]   # is a matrix
+    concentration_total = arr[:, n]    # 
+
+    # uses non-negative least squares solver to solve for x
+    # Solve argmin_x || Ax - b ||_2 for x>=0.
+    cell_molar_fraction = scipy.optimize.nnls(
+        concentration_matrix, 
+        concentration_total
+    )[0]
+
+    # sanity check
+    np.array_equal(
+        np.dot(concentration_matrix, cell_molar_fraction),
+        concentration_total
+    )
+
+    # these are establish bounds for determining if 
+    ratio =  abs(cell_molar_fraction / np.sum(cell_molar_fraction))
+
+    # TODO: remove if not necessary
+    if False:
+        if all(-1E-8 <= i <= 1+1E-8 for i in cell_molar_fraction) and all(abs(i) < 1E-6 for i in b-c):
+            ratio =  abs(cell_molar_fraction / np.sum(cell_molar_fraction))
+        else:
+            ratio = np.zeros(n)
+
+    return ratio
+
+#### THIS IS THE STUFF I HAVE NOT WRITTEN
+
+
+def archive_vasp_simulation(src_path, dst_path):
+    assert os.path.isdir(src_path)
+    assert not os.path.exists(dst_path)
+
+    vasp_files_wanted = [
+        'INCAR',
+        'POSCAR',
+        'CONTCAR',
+    ]
+    with tarfile.open(dst_path, 'a') as tarball:
+        for i in range(N_CELL):
+            folder = 'TMP-{}'.format(i + 1)
+            wanted = ['POSCAR', 'CONTCAR', 'OSZICAR', 'vasp.out']
+            for j in wanted:
+                src = '{}/{}'.format(folder, j)
+                if os.path.exists(src):
+                    dst = '{}_{}_{}'.format(j, self.step, i + 1)
+                    tar.add(src, arcname=dst, recursive=False)
+            if not os.path.exists('TMP'):
+                os.mkdir('TMP')
+            shutil.copy('{}/CONTCAR'.format(folder),
+                        'TMP/POSCAR_{}'.format(i + 1))
+
 
 def clear_folders():
     """Clear all TMP folders."""
@@ -8,23 +113,12 @@ def clear_folders():
             for j in os.listdir(folder):
                 os.remove('{}/{}'.format(folder, j))
 
+from logfile import Pymatmc2LogFile
 def save_log(line):
     """Save a line to the LOG_FILE."""
     with open(LOG_FILE, 'a+') as f:
         f.write(line + '\n')
 
-
-def get_ratio(arr):
-    """Calculate cell ratios from (n+1)*n input."""
-    n = N_CELL
-    a = arr[:, :n]
-    b = arr[:, n]
-    x = nnls(a, b)[0]
-    c = np.dot(a, x)
-    if all(-1E-8 <= i <= 1+1E-8 for i in x) and all(abs(i) < 1E-6 for i in b-c):
-        return abs(x / np.sum(x))
-    else:
-        return np.zeros(n)
 
 
 def get_structure(mode):
@@ -88,6 +182,12 @@ def run_job(folder):
         save_log('VASP under {} is not finished.'.format(folder))
         exit()
 
+def clear_lock_file():
+    lock_file_path = 'pymatmc2_lock'
+    if os.path.exists(lock_file_path):
+        os.remove(lock_file_path)
+
+
 def stop_check():
     """Check for manual stop."""
     if os.path.exists(STOP_FILE):
@@ -95,14 +195,15 @@ def stop_check():
         save_log("Found stop file. Stopping...")
         exit()
 
-def prepare():
+
+def prepare(results_path):
     """Make sure all files exist."""
-    wanted = ['INCAR', 'KPOINTS', 'POTCAR']
-    for i in wanted:
+    vasp_required_files = ['INCAR', 'KPOINTS', 'POTCAR']
+    for i in vasp_required_files:
         if not os.path.exists(i):
             save_log('{} not found.'.format(i))
             exit()
-    with open(RESULTS_FILE, 'a+') as f:
+    with open(results_path, 'r') as f:
         lines = f.readlines()
     if len(lines) > 1:
         return
