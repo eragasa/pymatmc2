@@ -1,6 +1,7 @@
 import os
 import copy
 import yaml
+from typing import Dict, List
 from mexm.io.filesystem import OrderedDictYAMLLoader
 
 class Pymatmc2Configuration():
@@ -47,21 +48,21 @@ class Pymatmc2Configuration():
             raise TypeError(msg)
 
     @property
-    def n_cells(self):
+    def n_cells(self) -> int:
         """:(int) number of simulation_cells """     
         return len(self.configuration['atomic_configuration']['simulation_cells'])
 
     @property
-    def simulation_cells(self):
+    def simulation_cells(self) -> Dict[str, Dict[str, str]]:
         """:dict simulations cells"""
         return self.configuration['atomic_configuration']['simulation_cells']
     
     @property
-    def temperature(self):
+    def temperature(self) -> float:
         return self.configuration['environment_variables']['temperature']
 
     @property
-    def pressure(self):
+    def pressure(self) -> float:
         return self.configuration['environment_variables']['pressure']
 
     def read(self, path):

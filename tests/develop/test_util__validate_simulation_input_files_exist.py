@@ -2,7 +2,7 @@ import pytest
 import os
 import shutil
 
-from utils import validate_vasp_simulation_input_files_exist
+from pymatmc2.utils import validate_vasp_simulation_input_files_exist
 
 @pytest.fixture
 def vasp_simulation_dir(tmpdir, request):

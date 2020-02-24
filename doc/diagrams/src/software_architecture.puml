@@ -1,0 +1,54 @@
+@startuml
+
+scale 500 width
+scale 500 height
+
+actor user
+node hpc_head{
+    component crontab
+    rectangle scripts{
+        component mc2
+        component mexm_overlord
+    }
+    component torque{
+        component qsub
+        component qstat
+        queue torque_queue
+    }
+    database sqlite
+    folder vasp_simulation_path{
+        file runjob.sh
+        rectangle vasp_input{
+            file INCAR
+            file POSCAR
+            file KPOINTS
+            file POTCAR
+
+        }
+        rectangle vasp_output{
+            file OSZICAR
+            file OUTCAR
+        }
+    }
+}
+rectangle mpi_job{
+    component vasp
+}
+actor -- hpc_head
+crontab -- mc2
+crontab -- mexm_overlord
+mexm_overlord -- qsub
+mexm_overlord -- qstat
+mexm_overlord -- sqlite
+mexm_overlord -> runjob.sh
+mc2 -- sqlite
+mc2 -- vasp_input
+qsub -- torque_queue
+torque_queue -- qstat
+torque_queue -- mpi_job
+
+vasp_input -- vasp
+vasp -- vasp_output
+
+@enduml
+

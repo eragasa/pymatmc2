@@ -25,6 +25,4 @@ partition MultiCellMonteCarloCode {
     endif
 }
 end
-
-
 @enduml

@@ -1,0 +1,7 @@
+@startuml
+!$mexm_color = "#blue"
+!$pymatmc2 = "#red"
+skinparam componentStyle uml2
+[mexm-base] $mexmcolor
+[pymatmc2] #red
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+class MultiCellMonteCarlo{
+    __attributes__
+    + is_restart: bool
+    + configuration: Pymatmc2Configuration
+    + results: Pymatmc2Results
+    + logger: Pymatmc2Log
+    __properties__
+    __init__()
+    + create_simulation_directory()
+    + read_configuration()
+    + read_results()
+    + run()
+    + get_restart_point()
+    + create_vasp_simulation(VaspSimulation)
+}
+@enduml

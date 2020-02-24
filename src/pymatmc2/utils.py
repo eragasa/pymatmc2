@@ -2,6 +2,7 @@ import os
 import tarfile
 import scipy.optimize 
 import numpy as np
+from pymatmc2 import Pymatmc2Log
 
 #### THIS IS THE STUFF I HAVE WRITTEN
 def validate_vasp_simulation_input_files_exist(path):
@@ -113,7 +114,6 @@ def clear_folders():
             for j in os.listdir(folder):
                 os.remove('{}/{}'.format(folder, j))
 
-from logfile import Pymatmc2LogFile
 def save_log(line):
     """Save a line to the LOG_FILE."""
     with open(LOG_FILE, 'a+') as f:

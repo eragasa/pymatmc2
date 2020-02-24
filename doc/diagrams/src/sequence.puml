@@ -1,0 +1,13 @@
+participant user
+user -> overlord : overlord start
+overlord -> crontab : add overlord
+user -> pymatmc2 : pymatmc2 start
+pymatmc2 -> sqlite : add job
+
+overlord -> sqlite : request job
+overlord -> torque : qsub job
+overlord -> torque : qstat job
+torque -> overlord: get qstat info
+user -> pymatmc2 : pymatmc2 stop
+user -> overlord: stop job
+overlord -> crontab: remove job

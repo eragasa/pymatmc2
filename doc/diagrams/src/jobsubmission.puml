@@ -1,0 +1,26 @@
+|crontab|
+start
+|overlord|
+:read_configuration;
+|torque|
+:get existing simulations;
+while (each simulation) is (true)
+if (simulations_complete?) then (false)
+    :mark_simulations_complete;
+else (true)
+    :mark_simulations_complete;
+endif
+:check new;
+:create runjob.sh;
+:qsub;
+    :check existing;
+    :qstat;
+    fork
+        end
+    fork again
+        |sqlite|
+        :add_simulation_info;
+    endfork   
+
+|crontab|
+end

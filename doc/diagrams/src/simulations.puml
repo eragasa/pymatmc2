@@ -1,0 +1,32 @@
+@startuml
+abstract class Simulation
+
+class VaspSimulation{
+    +incar: Incar
+    +poscar: Poscar
+    +potcar: Potcar
+    +kpoints: Kpoints
+}
+Simulation <|-- VaspSimulation
+Incar o-- VaspSimulation
+Poscar o-- VaspSimulation
+Kpoints o-- VaspSimulation
+Potcar o-- VaspSimulation
+
+Simulation <|-- LammpsSimulation
+LammpsSimulation <|-- LammpsRelaxPositions
+LammpsSimulation <|-- LammpsRelaxCell
+LammpsSimulation <|-- LammpsRelaxStructure
+LammpsSimulation <|-- LammpsNpt
+LammpsSimulation <|-- LammpsNvt
+
+abstract class LammpsSimulation
+LammpsStructureFile o-- LammpsSimulation
+
+class LammpsRelaxPositions
+class LammpsRelaxCell
+class LammpsRelaxStructure
+
+SimulationCell o-- Poscar
+SimulationCell o-- LammpsStructureFile
+@enduml

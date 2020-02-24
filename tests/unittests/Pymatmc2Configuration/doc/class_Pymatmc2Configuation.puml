@@ -1,0 +1,5 @@
+@startuml class_pymatmc2.Pymatmc2Configuration
+class Pymatmc2Configuration{
+    -- properties --
+}
+@enduml

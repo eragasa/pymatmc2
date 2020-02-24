@@ -1,0 +1,23 @@
+@startuml class_pymatmc2.MultiCell
+class pymatmc2.MultiCell{
+    --properties--
+    +n_atoms: int
+    +cells: Dict[str, SimulationCell]
+    --methods--
+    + get_n_atoms(symbol): int
+}
+
+class mexm.io.vasp.Poscar
+class mexm.SimulationCell
+
+pymatmc2.MultiCell "1..N" o-- mexm.SimulationCell: contains >
+mexm.io.vasp.Poscar -> mexm.SimulationCell: extends >
+mexm.SimulationCell *-- mexm.Lattice
+mexm.SimulationCell *-- mexm.AtomicBasis
+mexm.AtomicBasis "1..N" *-- mexm.Atoms
+
+mexm.simulation.Simulation -- pymatmc2.MultiCell
+mexm.simulation.VaspSimulation -> mexm.simulation.Simulation: extends >
+mexm.simulation.VaspSimulation "1..1" -> mexm.SimulationCell: contains >
+@enduml
+
