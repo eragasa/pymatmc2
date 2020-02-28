@@ -65,6 +65,10 @@ class Pymatmc2Configuration():
     def pressure(self) -> float:
         return self.configuration['environment_variables']['pressure']
 
+    @property
+    def molar_fraction_total(self) -> List[float]:
+        return self.configuration['atomic_configuration']['molar_fraction_total']
+
     def read(self, path):
         """ read the configuration files
 

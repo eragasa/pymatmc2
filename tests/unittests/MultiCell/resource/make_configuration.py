@@ -11,7 +11,7 @@ configuration['job_submission'] = {
     'hpc_config_path':'osc.pitzer'
 }
 configuration['atomic_configuration'] = {
-    'molar_fraction_total':{'Au':24, 'Pt':8},
+    'molar_fraction_total':{'Au':8, 'Pt':24},
     'simulation_cells':{
         'fcc1':{
             'incar':os.path.join('resource','INCAR_1'),

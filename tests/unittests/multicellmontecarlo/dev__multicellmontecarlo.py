@@ -1,5 +1,5 @@
 from mexm.simulation import VaspSimulation
-from multicellmontecarlo import MultiCellMonteCarlo
+from mexm import MultiCellMonteCarlo
 
 if __name__ == "__main__":
     o_mc2 = MultiCellMonteCarlo()
