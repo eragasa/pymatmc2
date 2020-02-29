@@ -35,8 +35,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.doctest',
     'sphinx.ext.napoleon',
-    'sphinx.ext.linkcode'
-    'sphinx.ext.imgmath'
+    'sphinx.ext.imgmath',
+    'sphinxcontrib.bibtexwww'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

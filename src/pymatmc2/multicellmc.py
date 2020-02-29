@@ -2,12 +2,11 @@
 # Copyright (c) Eugene J. Ragasa
 # Distributed under the terms of the MIT License
 
-""" the log file 
+""" multicell montecarlo class
 
 This module implements a logging facility
 """
 
-__all__ = ["Pymatmc2Log"]
 __author__ = "Eugene J. Ragasa"
 __email__ = "ragasa.2@osu.edu"
 __copyright__ = "Copyright 2020, Eugene J. Ragasa"
@@ -69,7 +68,7 @@ class MultiCellMonteCarlo():
         """
 
         self.is_restart = is_restart
-        self.simulations_path = 'simulations'
+        self.simulations_path = simulations_path
 
         self.start_logging(
             path = logfile_path, 
@@ -180,6 +179,7 @@ class MultiCellMonteCarlo():
     def run(self):
         if self.is_restart:
             i_iteration = self.determine_current_iteration()
+            print(i_iteration)
         else:
             i_iteration = 0
             self.run_first_iteration()
@@ -187,7 +187,6 @@ class MultiCellMonteCarlo():
     def run_first_iteration(self):
         self.log('starting iteration 0')
         i_iteration = 0
-        n_cells = self.configuration.n_cells
 
         simulations = {}
         for k, v in self.configuration.simulation_cells.items():
@@ -198,56 +197,22 @@ class MultiCellMonteCarlo():
             simulations[k].potcar.read(v['potcar'])
             simulation_path = os.path.join(
                 self.simulations_path,
-                '{}_{}_T{}_P{}'.format(i_iteration,k,)
+                '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
+                    cellname = k,
+                    iteration = i_iteration,
+                    temperature = int(self.configuration.temperature),
+                    pressure = int(self.configuration.pressure)
+                )
             )
-            simulations[k].write(path=simulation_path)
+            os.mkdir(simulation_path)
+            simulations[k].write(simulation_path=simulation_path)
 
-    def start_next_iterationse(self):
-        pass
+    def determine_current_iteration(self) -> int:
+        raise NotImplementedError
+
+    def start_next_iteration(self):
+        raise NotImplementedError
 
 if __name__ == "__main__":
     mc2 = MultiCellMonteCarlo(is_restart=False)
     exit()
-
-    k_B = BOLTZMANN
-    C = COULOMB
-    T = configuration.temperature
-    N_cell = configuration.n_cells
-    # prepare()
-
-    utils.clear_lock_file()
-    while True:
-        stop_check()
-        folders = get_structure('flip_alt')
-        if len(folders) == 0:
-            r1 = Results()
-            r1.step += 1
-            r1.add_results(REJECTED_FILE)
-            continue
-        for folder in folders:
-            run_job(folder)
-        
-        # why am initializing results here
-        r1 = Results()
-        r2 = Results()
-        r2.read_next()
-        save_log('{:>5d} {}\n'.format(r2.step, time.strftime("%Y-%m-%d %H:%M")))
-
-        
-        if energy_new < energy_old:
-            self.accept_new_configuration()
-        else:
-            self.calculate_rejection_probability(toten_1, toten_2)
-            
-        # what is this probability??
-        probability = np.exp((r1.total_energy - r2.total_energy) * N_cell *
-                             C / k_B / T)
-        r2.probability = np.minimum(probability, 1.0)
-        if np.random.rand() < r2.probability:
-            r2.add_results(RESULTS_FILE)
-            r2.tar_file()
-            if r2.step >= 99999:
-                save_log("Maximum step 99999 reached.")
-                exit()
-        else:
-            r2.add_results(REJECTED_FILE)

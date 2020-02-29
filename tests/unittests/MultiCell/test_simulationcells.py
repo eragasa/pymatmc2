@@ -4,7 +4,7 @@ from mexm.io.vasp import Poscar
 from pymatmc2.multicell import MultiCell
 
 def test__MultiCell__init():
-    o = MultiCell(n_cells=2)
+    o = MultiCell()
 
 def test__MultiCell__read_poscar_files():
     o = MultiCell(n_cells = 2)

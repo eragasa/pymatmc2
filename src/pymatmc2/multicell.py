@@ -72,6 +72,7 @@ class MultiCell:
     def cell_names(self):
         ordered_cells = OrderedDict(sorted(self.cells.items()))
         return [k for k in ordered_cells.keys()]
+        
     @property
     def cell_molar_fraction(self) -> List[List[float]]:
         X = []
