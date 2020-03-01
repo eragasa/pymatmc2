@@ -14,16 +14,16 @@ configuration['atomic_configuration'] = {
     'molar_fraction_total':{'Au':24, 'Pt':8},
     'simulation_cells':{
         'fcc1':{
-            'incar':os.path.join('resources','INCAR_1'),
-            'kpoints':os.path.join('resources','KPOINTS_1'),
-            'poscar':os.path.join('resources','POSCAR_1'),
-            'potcar':os.path.join('resources','POTCAR')
+            'incar':os.path.join('resource','INCAR_1'),
+            'kpoints':os.path.join('resource','KPOINTS_1'),
+            'poscar':os.path.join('resource','POSCAR_1'),
+            'potcar':os.path.join('resource','POTCAR')
         },
         'fcc2':{
-            'incar':os.path.join('resources','INCAR_2'),
-            'kpoints':os.path.join('resources','KPOINTS_2'),
-            'poscar':os.path.join('resources','POSCAR_2'),
-            'potcar':os.path.join('resources','POTCAR')
+            'incar':os.path.join('resource','INCAR_2'),
+            'kpoints':os.path.join('resource','KPOINTS_2'),
+            'poscar':os.path.join('resource','POSCAR_2'),
+            'potcar':os.path.join('resource','POTCAR')
         }
     }
 }
