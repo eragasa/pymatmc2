@@ -15,7 +15,8 @@ POTIM = 0.15
 #Precision control
 PREC = Accurate
 ENCUT = 300
-ISMEAR = 1; SIGMA = 0.15
+ISMEAR = 1
+SIGMA = 0.15
 LREAL = Auto
 ISYM = 1
 #NBANDS = 180
