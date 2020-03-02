@@ -2,7 +2,9 @@ import os
 from pymatmc2 import Pymatmc2Configuration
 
 configuration = {}
-configuration['hpc_manager'] = {
+configuration['hpc_manager'] = {}
+configuration['hpc_manager']['type'] = 'torque'
+configuration['hpc_manager']['configuration'] = {
     'account':'PAA0028',
     'walltime':72,
     'n_nodes':1,
