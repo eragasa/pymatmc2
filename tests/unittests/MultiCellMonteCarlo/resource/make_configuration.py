@@ -2,6 +2,17 @@ import os
 from pymatmc2 import Pymatmc2Configuration
 
 configuration = {}
+configuration['hpc_manager'] = {
+    'account':'PAA0028',
+    'walltime':72,
+    'n_nodes':1,
+    'ppn':40,
+    'jobname':'Si_job_name',
+    'errpath':'job.err',
+    'stdpath':'job.out',
+    'modules':['intel/19.0.5', 'intelmpi/2019.3'],
+    'cmd':'mpiexec $VASP_STD_BIN > vasp.out'
+}
 configuration['calculator'] = {
     'calculator':'vasp',
     'simulation_type':'vasp_min_all'
