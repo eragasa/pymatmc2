@@ -15,8 +15,11 @@ __date__ = "2020/02/22"
 
 import os
 import shutil
+from copy import deepcopy
+
 from mexm.io.vasp import Poscar
 from mexm.simulation import VaspSimulation
+from mexm.job import JobSubmissionManagerFactory
 
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
@@ -189,6 +192,8 @@ class MultiCellMonteCarlo():
         i_iteration = 0
 
         self.create_simulations(i_iteration=i_iteration)
+        self.create_submission_scripts(i_iteration=i_iteration)
+        self.submit_jobs(i_iteration=i_iteration)
 
     def create_simulations(self, i_iteration: int):
         # for vasp simulations
@@ -211,9 +216,51 @@ class MultiCellMonteCarlo():
 
             # abstract Simulation.write()
             simulation_path = os.path.join(self.simulations_path, simulation_name)
+            print(simulation_path)
             os.mkdir(simulation_path)
             simulations[k].write(simulation_path=simulation_path)
 
+    def create_submission_scripts(self, i_iteration: int):
+        simulation_names = []
+        for k, v in self.configuration.simulation_cells.items():
+            simulation_name = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
+                    cellname = k,
+                    iteration = i_iteration,
+                    temperature = int(self.configuration.temperature),
+                    pressure = int(self.configuration.pressure)
+                )
+            simulation_names.append(simulation_name)
+
+            configuration_ = self.configuration.configuration
+            hpc_type = configuration_['hpc_manager']['type']
+            script_kwargs = deepcopy(configuration_['hpc_manager']['configuration'])
+            script_kwargs['jobname'] = simulation_name
+            script_path = os.path.join(
+                self.simulations_path,
+                simulation_name,
+                'runjob.sh'
+            )
+            JobSubmissionManagerFactory.write_submission_script(
+                hpc_type = hpc_type,
+                script_kwargs = script_kwargs,
+                script_path = script_path
+            )
+
+    def submit_jobs(self, i_iteration: int):
+        simulation_name_fmt = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'
+        for k, v in self.configuration.simulation_cells.items():
+            simulation_name = simulation_name_fmt.format(
+                cellname = k,
+                iteration = i_iteration,
+                temperature = int(self.configuration.temperature),
+                pressure = int(self.configuration.pressure)
+            )
+            simulation_path = os.path.join(
+                self.simulations_path,
+                simulation_name
+            )
+
+        JobSubmissionManagerFactory.submit_job(simulation_path=simulation_path)
     def determine_current_iteration(self) -> int:
         raise NotImplementedError
 

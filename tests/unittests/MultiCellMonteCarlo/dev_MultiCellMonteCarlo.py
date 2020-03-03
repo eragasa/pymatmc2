@@ -13,3 +13,4 @@ if __name__ == "__main__":
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     assert isinstance(o_mc2, MultiCellMonteCarlo)
     o_mc2.run_first_iteration()
+    assert os.path.isdir('simulations')
