@@ -248,6 +248,8 @@ class MultiCellMonteCarlo():
 
     def submit_jobs(self, i_iteration: int):
         simulation_name_fmt = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'
+        configuration_ = self.configuration.configuration
+        hpc_type = configuration_['hpc_manager']['type']
         for k, v in self.configuration.simulation_cells.items():
             simulation_name = simulation_name_fmt.format(
                 cellname = k,
@@ -259,8 +261,12 @@ class MultiCellMonteCarlo():
                 self.simulations_path,
                 simulation_name
             )
+            JobSubmissionManagerFactory.submit_job(
+                hpc_type=hpc_type,
+                simulation_path=simulation_path,
+                submission_script_path='runjob.sh'
+            )
 
-        JobSubmissionManagerFactory.submit_job(simulation_path=simulation_path)
     def determine_current_iteration(self) -> int:
         raise NotImplementedError
 
