@@ -188,22 +188,29 @@ class MultiCellMonteCarlo():
         self.log('starting iteration 0')
         i_iteration = 0
 
+        self.create_simulations(i_iteration=i_iteration)
+
+    def create_simulations(self, i_iteration: int):
+        # for vasp simulations
         simulations = {}
+        simulation_names = []
         for k, v in self.configuration.simulation_cells.items():
-            simulations[k] = VaspSimulation()
-            simulations[k].incar.read(v['incar'])
-            simulations[k].poscar.read(v['poscar'])
-            simulations[k].kpoints.read(v['kpoints'])
-            simulations[k].potcar.read(v['potcar'])
-            simulation_path = os.path.join(
-                self.simulations_path,
-                '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
+            simulation_name = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
                     cellname = k,
                     iteration = i_iteration,
                     temperature = int(self.configuration.temperature),
                     pressure = int(self.configuration.pressure)
                 )
-            )
+            
+            simulation_names.append(simulation_name)
+            simulations[k] = VaspSimulation()
+            simulations[k].incar.read(v['incar'])
+            simulations[k].poscar.read(v['poscar'])
+            simulations[k].kpoints.read(v['kpoints'])
+            simulations[k].potcar.read(v['potcar'])
+
+            # abstract Simulation.write()
+            simulation_path = os.path.join(self.simulations_path, simulation_name)
             os.mkdir(simulation_path)
             simulations[k].write(simulation_path=simulation_path)
 
