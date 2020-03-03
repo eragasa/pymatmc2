@@ -168,7 +168,7 @@ class MultiCellMonteCarlo():
 
         if is_restart:
             self.results = Pymatmc2Results()
-            self.results.read()
+            # self.results.read()
         else:
             if os.path.isfile(path):
                 self.log('removing existing results file')
@@ -181,7 +181,11 @@ class MultiCellMonteCarlo():
     
     def run(self):
         if self.is_restart:
-            i_iteration = self.determine_current_iteration()
+            i_iteration, status = self.determine_current_iteration()
+            if status == 'running':
+                exit()
+            else:
+                self.create_next_structures(i_iteration=i_iteration+1)
             print(i_iteration)
         else:
             i_iteration = 0
@@ -195,17 +199,23 @@ class MultiCellMonteCarlo():
         self.create_submission_scripts(i_iteration=i_iteration)
         self.submit_jobs(i_iteration=i_iteration)
 
+    def get_job_name(self, cell_name: str, i_iteration: int) -> str:
+        job_name_fmt = '{cell_name}_{iteration:03}_T{temperature}_P{pressure}'
+        job_name = job_name_fmt.format(
+            cell_name = cell_name,
+            iteration = i_iteration,
+            temperature = int(self.configuration.temperature),
+            pressure = int(self.configuration.pressure)
+
+        )
+        return job_name
+
     def create_simulations(self, i_iteration: int):
         # for vasp simulations
         simulations = {}
         simulation_names = []
         for k, v in self.configuration.simulation_cells.items():
-            simulation_name = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
-                    cellname = k,
-                    iteration = i_iteration,
-                    temperature = int(self.configuration.temperature),
-                    pressure = int(self.configuration.pressure)
-                )
+            simulation_name = self.get_job_name(cell_name= k, i_iteration=i_iteration)
             
             simulation_names.append(simulation_name)
             simulations[k] = VaspSimulation()
@@ -222,13 +232,8 @@ class MultiCellMonteCarlo():
 
     def create_submission_scripts(self, i_iteration: int):
         simulation_names = []
-        for k, v in self.configuration.simulation_cells.items():
-            simulation_name = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'.format(
-                    cellname = k,
-                    iteration = i_iteration,
-                    temperature = int(self.configuration.temperature),
-                    pressure = int(self.configuration.pressure)
-                )
+        for k in self.configuration.simulation_cells:
+            simulation_name = self.get_job_name(cell_name= k, i_iteration=i_iteration)
             simulation_names.append(simulation_name)
 
             configuration_ = self.configuration.configuration
@@ -247,20 +252,19 @@ class MultiCellMonteCarlo():
             )
 
     def submit_jobs(self, i_iteration: int):
-        simulation_name_fmt = '{cellname}_{iteration:03}_T{temperature}_P{pressure}'
         configuration_ = self.configuration.configuration
         hpc_type = configuration_['hpc_manager']['type']
-        for k, v in self.configuration.simulation_cells.items():
-            simulation_name = simulation_name_fmt.format(
-                cellname = k,
-                iteration = i_iteration,
-                temperature = int(self.configuration.temperature),
-                pressure = int(self.configuration.pressure)
+        for k in self.configuration.simulation_cells:
+            simulation_name = self.get_job_name(
+                cell_name= k, 
+                i_iteration=i_iteration
             )
+
             simulation_path = os.path.join(
                 self.simulations_path,
                 simulation_name
             )
+
             JobSubmissionManagerFactory.submit_job(
                 hpc_type=hpc_type,
                 simulation_path=simulation_path,
@@ -268,8 +272,59 @@ class MultiCellMonteCarlo():
             )
 
     def determine_current_iteration(self) -> int:
-        raise NotImplementedError
+        i_iteration = 0
+        status = None
+        while True:
+            cell_names = [
+                k for k in self.configuration.simulation_cells
+            ]
 
+            simulation_names = [
+                self.get_job_name(k, i_iteration) for k in cell_names
+            ]
+            
+            simulation_paths = [
+                os.path.join(self.simulations_path, k) for k in simulation_names
+            ]
+            
+            if not all([os.path.isdir(k) for k in simulation_paths]):
+                i_iteration -= 1
+                break
+            else:
+                if all([
+                    os.path.isfile(os.path.join(k,'jobComplete')) for k in simulation_paths
+                ]):
+                    status = 'complete'
+                else:
+                    status = 'running'
+                    break
+            i_iteration += 1
+
+        return i_iteration, status
+
+    def create_next_structures(self, i_iteration: int):
+        simulations = {}
+        for k, v in self.configuration.simulation_cells.items():
+            contcar_path = os.path.join(
+                self.simulations_path,
+                self.get_job_name(k, i_iteration),
+                'CONTCAR')
+            simulations[k] = VaspSimulation()
+            simulations[k].incar.read(v['incar'])
+            simulations[k].poscar.read(contcar_path)
+            simulations[k].kpoints.read(v['kpoints'])
+            simulations[k].potcar.read(v['potcar'])
+
+        for k, v in simulations.items():
+            import random
+            n_atoms = len(v.poscar.atomic_basis)
+            i_atom = random.randint(0,n_atoms-1)
+            original_symbol = v.poscar.atomic_basis[i_atom].symbol
+            symbols = list(v.poscar.symbols)
+            symbols.remove(original_symbol)
+            new_symbol = random.choice(symbols)
+            print(k,'[{}]'.format(i_atom),':',original_symbol,'->',new_symbol)
+            simulations[k].poscar.atomic_basis[i_atom].symbol = new_symbol
     def start_next_iteration(self):
         raise NotImplementedError
 
