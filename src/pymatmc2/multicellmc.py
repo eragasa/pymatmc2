@@ -15,6 +15,7 @@ __date__ = "2020/02/22"
 
 import os
 import shutil
+import random
 from copy import deepcopy
 
 from mexm.io.vasp import Poscar
@@ -185,7 +186,9 @@ class MultiCellMonteCarlo():
             if status == 'running':
                 exit()
             else:
-                self.create_next_structures(i_iteration=i_iteration+1)
+                self.create_next_simulations(i_iteration=i_iteration+1)
+                self.create_submission_scripts(i_iteration=i_iteration+1)
+                self.submit_jobs(i_iteration=i_iteration+1)
             print(i_iteration)
         else:
             i_iteration = 0
@@ -302,12 +305,12 @@ class MultiCellMonteCarlo():
 
         return i_iteration, status
 
-    def create_next_structures(self, i_iteration: int):
+    def create_next_simulations(self, i_iteration: int):
         simulations = {}
         for k, v in self.configuration.simulation_cells.items():
             contcar_path = os.path.join(
                 self.simulations_path,
-                self.get_job_name(k, i_iteration),
+                self.get_job_name(k, i_iteration-1),
                 'CONTCAR')
             simulations[k] = VaspSimulation()
             simulations[k].incar.read(v['incar'])
@@ -325,6 +328,12 @@ class MultiCellMonteCarlo():
             new_symbol = random.choice(symbols)
             print(k,'[{}]'.format(i_atom),':',original_symbol,'->',new_symbol)
             simulations[k].poscar.atomic_basis[i_atom].symbol = new_symbol
+
+        for k, v in simulations.items():
+            simulation_name = self.get_job_name(cell_name=k, i_iteration=i_iteration)
+            simulation_path = os.path.join(self.simulations_path, simulation_name)
+            os.mkdir(simulation_path)
+            simulations[k].write(simulation_path=simulation_path)
     def start_next_iteration(self):
         raise NotImplementedError
 
