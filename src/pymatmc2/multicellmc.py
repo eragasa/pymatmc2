@@ -186,21 +186,25 @@ class MultiCellMonteCarlo():
             if status == 'running':
                 exit()
             else:
-                self.create_next_simulations(i_iteration=i_iteration+1)
-                self.create_submission_scripts(i_iteration=i_iteration+1)
-                self.submit_jobs(i_iteration=i_iteration+1)
-            print(i_iteration)
+                if i_iteration == 1:
+                    self.log('starting interation {}'.format(i_iteration))
+                    self.create_next_simulations(i_iteration=i_iteration+1)
+                    self.create_submission_scripts(i_iteration=i_iteration+1)
+                    self.submit_jobs(i_iteration=i_iteration+1)
+                else:
+                    self.log('starting iteration {}'.format(i_iteration))
+                    self.determine_acceptance_rejection(i_iteration=i_iteration)
+                    self.create_next_simulations(i_iteration=i_iteration+1)
+                    self.create_submission_scripts(i_iteration=i_iteration+1)
+                    self.submit_jobs(i_iteration=i_iteration+1)
+
         else:
+            self.log('starting iteration 0')
+
             i_iteration = 0
-            self.run_first_iteration()
-
-    def run_first_iteration(self):
-        self.log('starting iteration 0')
-        i_iteration = 0
-
-        self.create_simulations(i_iteration=i_iteration)
-        self.create_submission_scripts(i_iteration=i_iteration)
-        self.submit_jobs(i_iteration=i_iteration)
+            self.create_simulations(i_iteration=i_iteration)
+            self.create_submission_scripts(i_iteration=i_iteration)
+            self.submit_jobs(i_iteration=i_iteration)
 
     def get_job_name(self, cell_name: str, i_iteration: int) -> str:
         job_name_fmt = '{cell_name}_{iteration:03}_T{temperature}_P{pressure}'

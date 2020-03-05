@@ -147,3 +147,16 @@ class MultiCell:
         for cell in self.cells.values():
             n_atoms += cell.get_number_of_atoms(symbol)
         return n_atoms
+
+    def modify_atoms(self, modify_type: str, modify_options):
+        """
+
+        Arguments:
+            modify_type (str):  Supported options are 'interphase_swap', 'species_flip', and 'intraphase_swap'
+        """
+        modify_dict = {
+            'interphase_swap': self.modify_atoms_interphase_swap,
+            'species_flip':  self.modify_atoms_species_flip,
+            'intraphase_swap': self.modify_atoms_species_flip
+        }
+        
