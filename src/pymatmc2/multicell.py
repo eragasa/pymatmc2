@@ -1,3 +1,4 @@
+from copy import deepcopy
 from collections import OrderedDict
 from typing import List
 import numpy as np
@@ -24,6 +25,20 @@ class MultiCell:
         self.configuration = None
         self.molar_fraction_total = None
         self.simulations = None
+
+    @staticmethod
+    def initialize_from_obj(multicell):
+        """
+
+        Args:
+            multicell (MultiCell)
+        Returns:
+            MultiCell:
+        """
+        obj = MultiCell()
+        obj.configuration = deepcopy(multicell.configuration)
+        obj.simulations = deepcopy(multicell.simulations)
+        return obj
 
     @staticmethod
     def initialize_from_pymatmc2_configuration(
