@@ -68,6 +68,24 @@ class MultiCell:
         }
         return obj
     
+    @property
+    def total_energy(self):
+        # see Niu, et al "Multi-cell Monte Carlo method for phase prediction",
+        # npj Computational Materials, Eq (3) with P=0.
+
+        # number of phases
+        m = len(self.simulations)
+        
+        # 
+        sum_U = 0
+        for phase in self.simulations:
+            U = self.simulations[phase].total_energy
+            f = self.phase_molar_fraction[phase]
+            sum_U += U * f
+
+        return m * sum_U
+
+
     def configure(self, configuration: Pymatmc2Configuration):
         """ configure class from a Pymatmc2Configuration
         
@@ -126,6 +144,7 @@ class MultiCell:
             if isinstance(self.simulations[k], VaspSimulation):
                 cells[k] = self.simulations[k].poscar
         return cells
+
     @property
     def cell_molar_fraction(self) -> List[List[float]]:
         X = OrderedDict()

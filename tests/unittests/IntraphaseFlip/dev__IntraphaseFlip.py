@@ -2,7 +2,7 @@ import os
 from collections import OrderedDict
 from mexm.simulation import VaspSimulation
 from pymatmc2 import MultiCell
-from pymatmc2.multicellmutate import IntraphaseSwap
+from pymatmc2.multicellmutate import IntraphaseFlip
 
 """
 Currently the testing example uses simulation from an intraphase FLIP, these
@@ -51,14 +51,14 @@ def get_multicell_iteration_1() -> MultiCell:
 
 def dev__accept_or_reject():
     print(80*'-')
-    print('IntraphaseSwap.accept_or_reject()')
+    print('IntraphaseFlip.accept_or_reject()')
     print(80*'-')
     simulation_path = get_simulation_path()
     multicell0 = get_multicell_iteration_0()
     multicell1 = get_multicell_iteration_1()
     temperature = 400
     print('simulation_path:{}'.format(simulation_path))
-    obj = IntraphaseSwap()
+    obj = IntraphaseFlip()
     obj.accept_or_reject(
         multicell_initial = multicell0,
         multicell_candidate = multicell1,
@@ -67,10 +67,10 @@ def dev__accept_or_reject():
 
 def dev__mutate_multicell():
     print(80*'-')
-    print('IntraphaseSwap.mutate_multicell()')
+    print('IntraphaseFlip.mutate_multicell()')
     print(80*'-')
     multicell0 = get_multicell_iteration_0()
-    obj = IntraphaseSwap()
+    obj = IntraphaseFlip()
     multicell1 = obj.mutate_multicell(multicell = multicell0)
     assert isinstance(multicell1, MultiCell)
 

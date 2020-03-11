@@ -32,8 +32,8 @@ class MultiCellMutateAlgorithm(ABC):
     ) -> Tuple[bool, MultiCell]:
         raise NotImplementedError
 
-class InterphaseSwap(MultiCellMutateAlgorithm):
-    mutate_type = 'interphase_swap'
+class IntraphaseSwap(MultiCellMutateAlgorithm):
+    mutate_type = 'intraphase_swap'
     """ implements the Interphase swap algorithm 
     
     The interphase swap algorithm swaps atomic positions within each 
@@ -53,7 +53,7 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
             multicell (MultiCell): the cell to be mutated
 
         Returns:
-            MutliCell: the mutated cell
+            MultiCell: the mutated cell
         """
 
         rtn_multicell = MultiCell.initialize_from_obj(multicell=multicell)
@@ -110,6 +110,7 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
         ..math:
           exp ( frac{1}{k_B T} (E_1 - E_0) )
 
+
         """
 
         kB = constants.BOLTZMANN
@@ -122,7 +123,7 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
 
             p_accept = min(
                 1,
-                np.exp((E1 - E0)/(kB*temperature))
+                np.exp(-(E1 - E0)/(kB*temperature))
             )
 
         return p_accept
@@ -165,8 +166,8 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
             
             return rtn_multicell
 
-class IntraphaseSwap(MultiCellMutateAlgorithm):
-    mutate_type = 'intraphase_swap'
+class InterphaseSwap(MultiCellMutateAlgorithm):
+    mutate_type = 'interaphase_swap'
 
     def mutate_multicell(
         self,
@@ -190,15 +191,79 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         self,
         multicell: MultiCell
     ) -> MultiCell:
-        raise NotImplementedError
+
+        rtn_multicell = MultiCell.initialize_from_obj(multicell=multicell)
+        for phase in multicell.simulations:
+            simulation = multicell.simulations[phase]
+
+            if isinstance(simulation, VaspSimulation):
+                cell = SimulationCell.initialize_from_object(
+                obj = simulation.contcar
+            )
+
+            idx_atoms = list(range(len(cell.n_atoms)))
+            idx_atom = np.random.choice(idx_atoms, 1)[0]
+
+            old_symbol = cell.atomic_basis[idx_atom].symbol
+            symbols = cell.symbols
+            symbols.remove(old_symbol)
+            new_symbol = np.random.choice(symbols, 1)[0]
+
+            cell.atomic_basis[idx_atom].symbol = new_symbol
+        
+            if isinstance(simulation, VaspSimulation):
+                 rtn_multicell.simulations[phase].poscar \
+                    = Poscar.initialize_from_object(obj=cell)
+               
+        return rtn_multicell
+
+    def acceptance_probability(
+        self, 
+        E0: float, 
+        E1: float, 
+        temperature: float
+    ):
+        kB = constants.BOLTZMANN
+        T = temperature
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            p_accept = min(
+                1,
+                np.exp(- (1/(kB*T)) * (E1 - E0))
+            )
+
+        return p_accept
 
     def accept_or_reject(
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
+        temperature: float
     ) -> Tuple[bool, MultiCell]:
-        raise NotImplementedError
+        
 
+        E0 = multicell_initial.total_energy
+        E1 = multicell_candidate.total_energy
+
+        if E1 < E0:
+            is_accept = True
+        else:
+            p_accept = self.acceptance_probability(
+                E0 = E0, 
+                E1 = E1, 
+                temperature = temperature
+            )
+            
+            if np.random.random() < p_accept:
+                is_accept = True
+            else:
+                is_accept = False
+
+        if is_accept:
+            return multicell_candidate
+        else:
+            return multicell_initial
 
 class MultiCellMutateAlgorithmFactory(ABC):
     factories = {
