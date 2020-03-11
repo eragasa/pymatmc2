@@ -10,7 +10,10 @@ from pymatmc2 import MultiCell
 def resource_path(request):
     test_path = os.path.join(
         os.path.dirname(request.module.__file__),
-        'resource'
+        '..', # MultiCell dir
+        '..', # unittests
+        '..', # tests
+        'resource', 'AgPt', 'input'
     )
     return test_path
 

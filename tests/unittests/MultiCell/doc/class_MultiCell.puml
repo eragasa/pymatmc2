@@ -10,15 +10,15 @@ class pymatmc2.MultiCell{
 class mexm.io.vasp.Poscar
 class mexm.SimulationCell
 
-pymatmc2.MultiCell "1..N" o-- mexm.SimulationCell: contains >
 mexm.io.vasp.Poscar -> mexm.SimulationCell: extends >
+mexm.io.vasp.Poscar *-- mexm.simulation.VaspSimulation
 mexm.SimulationCell *-- mexm.Lattice
 mexm.SimulationCell *-- mexm.AtomicBasis
 mexm.AtomicBasis "1..N" *-- mexm.Atoms
 
 mexm.simulation.Simulation *-- pymatmc2.MultiCell
+mexm.SimulationCell *-- mexm.simulation.Simulation
 mexm.simulation.VaspSimulation -> mexm.simulation.Simulation: extends >
-mexm.simulation.VaspSimulation "1..1" -> mexm.SimulationCell: contains >
 @enduml
 
 @startuml activity_pymatmc2.MultiCell.configure

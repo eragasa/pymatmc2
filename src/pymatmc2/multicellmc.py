@@ -87,10 +87,12 @@ class MultiCellMonteCarlo():
         self.start_configuration(
             path = configuration_path
         )
+
         self.create_simulation_directory(
             path = self.simulations_path,
             is_restart = self.is_restart
         )
+
         self.start_results(
             path = results_path,
             is_restart = self.is_restart
@@ -222,7 +224,10 @@ class MultiCellMonteCarlo():
         simulations = {}
         simulation_names = []
         for k, v in self.configuration.simulation_cells.items():
-            simulation_name = self.get_job_name(cell_name= k, i_iteration=i_iteration)
+            simulation_name = self.get_job_name(
+                cell_name= k, 
+                i_iteration=i_iteration
+            )
             
             simulation_names.append(simulation_name)
             simulations[k] = VaspSimulation()

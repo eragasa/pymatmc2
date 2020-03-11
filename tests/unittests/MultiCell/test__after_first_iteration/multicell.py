@@ -4,7 +4,10 @@
 
 """ multicell montecarlo class
 
-This module implements a logging facility
+This module implements holding simulation classes for multiple cells
+
+TODO:
+[3/5/2020] - Generalize this class to use the SimulationFactory.
 """
 
 __author__ = "Eugene J. Ragasa"
@@ -103,7 +106,7 @@ class MultiCell:
         """
 
     @property
-    def cell_names(self):
+    def cell_names(self) => List[str]:
         ordered_cells = OrderedDict(sorted(self.cells.items()))
         return [k for k in ordered_cells.keys()]
         
@@ -159,4 +162,3 @@ class MultiCell:
             'species_flip':  self.modify_atoms_species_flip,
             'intraphase_swap': self.modify_atoms_species_flip
         }
-        

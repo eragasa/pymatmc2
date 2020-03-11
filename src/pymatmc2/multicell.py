@@ -3,22 +3,27 @@ from typing import List
 import numpy as np
 from numpy import linalg
 from mexm.io.vasp import Poscar
+from mexm.simulation import VaspSimulation
+
 from pymatmc2 import Pymatmc2Configuration
+
+class MultiCellError(BaseException): pass
 
 class MultiCell:
     """
 
     Attributes:
-        cells (Dict[str, Poscar])
-        molar_fraction_total (List[(float)])
+        configuration (Pymatmc2Configuration)
+        molar_fraction_total (List[float])
+        simulations (Dict[str, Simulation])
     """
 
     def __init__(self):
         """
         """
+        self.configuration = None
         self.molar_fraction_total = None
-        self.n_cells = None
-        self.cells = None
+        self.simulations = None
 
     @staticmethod
     def initialize_from_pymatmc2_configuration(
@@ -28,15 +33,19 @@ class MultiCell:
             configuration (Pymatmc2Configuration)
         """
         obj = MultiCell()
-        obj.cells = {}
 
         simulation_cells = configuration.simulation_cells
         order_simulation_cells = OrderedDict(
             sorted(simulation_cells.items())
         )
-        for k, v in order_simulation_cells.items():
-            obj.cells[k] = Poscar()
-            obj.cells[k].read(path=v['poscar'])
+        obj.simulations = OrderedDict()
+        if configuration.calculator_type == 'vasp':
+            for k, v in order_simulation_cells.items():
+                obj.simulations[k] = VaspSimulation()
+                obj.simulations[k].poscar.read(path=v['poscar'])
+                obj.simulations[k].incar.read(path=v['incar'])
+                obj.simulations[k].potcar.read(path=v['potcar'])
+                obj.simulations[k].kpoints.read(path=v['kpoints']) 
 
         molar_fraction_total = configuration.molar_fraction_total
         obj.molar_fraction_total = {
@@ -53,10 +62,32 @@ class MultiCell:
             configuration (Pymatmc2Configuration): instance of the 
                 Pymatmc2Configuration in which to setup this class.
          """
-        self.cells = {}
-        for k,v in configuration.simulation_cells.items():
-            self.cells[k] = Poscar()
-            self.cells[k].read(path=v['poscar'])            
+
+        assert isinstance(configuration, Pymatmc2Configuration)
+        # set argument to attribute value
+        self.configuration = configuration
+
+        # configure simulations
+        ordered_simulation_cells = OrderedDict(
+            sorted(self.configuration.simulation_cells.items())
+        )
+        self.simulations = OrderedDict()
+        if self.configuration.calculator_type == 'vasp':
+            for k, v in ordered_simulation_cells.items():
+                self.simulations[k] = VaspSimulation()
+                self.simulations[k].poscar.read(path=v['poscar'])
+                self.simulations[k].incar.read(path=v['incar'])
+                self.simulations[k].potcar.read(path=v['potcar'])
+                self.simulations[k].kpoints.read(path=v['kpoints'])
+
+        
+        # configure molar fraction total
+        sum_molar_fraction_total \
+            = sum(self.configuration.molar_fraction_total.values())
+        self.molar_fraction_total = OrderedDict()
+        for k, v in self.configuration.molar_fraction_total.items():
+            self.molar_fraction_total[k] = v/sum_molar_fraction_total
+            
 
     def add_cells_from_dict(self, simulation_cells):
         """ add cells from dictionary object
@@ -70,16 +101,26 @@ class MultiCell:
 
     @property
     def cell_names(self):
-        ordered_cells = OrderedDict(sorted(self.cells.items()))
-        return [k for k in ordered_cells.keys()]
-        
+        ordered_cell_names = sorted([k for k in self.simulations])
+        return ordered_cell_names
+    
+    @property
+    def cells(self):
+        cells = OrderedDict()
+        for k in self.cell_names:
+            if isinstance(self.simulations[k], VaspSimulation):
+                cells[k] = self.simulations[k].poscar
+        return cells
     @property
     def cell_molar_fraction(self) -> List[List[float]]:
-        X = []
-        ordered_cells = OrderedDict(sorted(self.cells.items()))
-        for v in ordered_cells.values():
-            n_atoms = [v.get_number_of_atoms(s) for s in self.symbols]
-            X.append([k/sum(n_atoms) for k in n_atoms])
+        X = OrderedDict()
+        for k in self.cell_names:
+
+            X[k] = OrderedDict()
+            sum_n_atoms = self.cells[k].n_atoms
+            for s in self.symbols:
+                n_atoms = self.cells[k].get_number_of_atoms(s)
+                X[k][s] = n_atoms/sum_n_atoms
         return X
     
     @property
@@ -94,17 +135,30 @@ class MultiCell:
 
     @property
     def total_molar_fraction(self):
-        c = [self.molar_fraction_total[s] for s in self.symbols]
+        c = OrderedDict(
+            [(s, self.molar_fraction_total[s]) for s in self.symbols]
+        )
         return c
     
     @property
     def phase_molar_fraction(self):
-        X = np.array(self.cell_molar_fraction)
-        c = np.array(self.total_molar_fraction)
 
+        # transform cell molar fraction in a matrix
+        X = []
+        for _, v in self.cell_molar_fraction.items():
+            X.append([v[s]for s in self.symbols])
+        X = np.array(X)
+
+        # transform total molar fraction into a column vector
+        c = [v for _, v in self.total_molar_fraction.items()]            
+        c = np.array(c)
+
+        # solve for phase molar fraction
         f = np.dot(linalg.inv(X), c)
         for k in f:
-            assert k > 0
+            if k < 0:
+                msg = "phase molar fraction cannot be negative"
+                raise MultiCellError(msg)
         return f.tolist()
         
     def get_number_of_atoms(self, symbol=None):

@@ -48,6 +48,16 @@ class Pymatmc2Configuration():
             raise TypeError(msg)
 
     @property
+    def calculator_type(self) -> str:
+        """:(str) the energy calculator code being code """
+        return self.configuration['calculator']['calculator_type']
+
+    @property
+    def simulation_type(self) -> str:
+        """:(str) the simulation type of the code being used """
+        return self.configuration['calculator']['simulation_type']
+
+    @property
     def n_cells(self) -> int:
         """:(int) number of simulation_cells """     
         return len(self.configuration['atomic_configuration']['simulation_cells'])
