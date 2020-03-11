@@ -1,5 +1,33 @@
 @startuml
 start
+if (is_restart) then (True)
+    :first_iteration;
+    stop
+else (False)
+    :determine_iteration;
+    if (iteration) then (1)
+        
+    elseif (iteration ) then  (< max_iterations)
+        :get_structure_mutation_last_iteration;
+        :determine mutation type;
+        if (mutation_type) then (flip)
+            :flip_mutation;
+        else (swap)
+            :swap_mutation;
+        endif 
+    else (max_iterations)
+        stop
+    endif
+    :calculate new structures;
+endif
 
 end
+@enduml
+
+@startuml
+   start
+   :determine_mutatation_type;
+   :get_probabilities;
+   :assign mutation type;
+   end
 @enduml
