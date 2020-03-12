@@ -22,6 +22,7 @@ from mexm.io.vasp import Poscar
 from mexm.simulation import VaspSimulation
 from mexm.job import JobSubmissionManagerFactory
 
+from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import Pymatmc2Results
@@ -186,6 +187,7 @@ class MultiCellMonteCarlo():
         if self.is_restart:
             i_iteration, status = self.determine_current_iteration()
             if status == 'running':
+                self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
             else:
                 if i_iteration == 1:
@@ -195,7 +197,7 @@ class MultiCellMonteCarlo():
                     self.submit_jobs(i_iteration=i_iteration+1)
                 else:
                     self.log('starting iteration {}'.format(i_iteration))
-                    self.determine_acceptance_rejection(i_iteration=i_iteration)
+                    # self.determine_acceptance_rejection(i_iteration=i_iteration)
                     self.create_next_simulations(i_iteration=i_iteration+1)
                     self.create_submission_scripts(i_iteration=i_iteration+1)
                     self.submit_jobs(i_iteration=i_iteration+1)
