@@ -190,14 +190,15 @@ class MultiCellMonteCarlo():
                 self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
             else:
-                if i_iteration == 1:
-                    self.log('starting interation {}'.format(i_iteration))
-                    self.create_next_simulations(i_iteration=i_iteration+1)
-                    self.create_submission_scripts(i_iteration=i_iteration+1)
-                    self.submit_jobs(i_iteration=i_iteration+1)
-                elif i_iteration > 1:
+                if i_iteration == 0:
+                    next_iteration = i_iteration + 1
+                    self.log('starting interation {}'.format(next_iteration))
+                    self.create_next_simulations(i_iteration=next_iteration)
+                    self.create_submission_scripts(i_iteration=next_iteration)
+                    self.submit_jobs(i_iteration=next_iteration)
+                elif i_iteration > 0:
                     self.log('starting iteration {}'.format(i_iteration))
-                    # self.determine_acceptance_rejection(i_iteration=i_iteration)
+                    self.determine_acceptance_rejection(i_iteration=i_iteration)
                     self.create_next_simulations(i_iteration=i_iteration+1)
                     self.create_submission_scripts(i_iteration=i_iteration+1)
                     self.submit_jobs(i_iteration=i_iteration+1)
