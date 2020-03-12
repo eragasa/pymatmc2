@@ -1,44 +1,73 @@
+#!/usr/bin/env python
 import click
 import os
 from crontab import CronTab
 
-PYMATMC2_CONTINUE_CMD = "python {} --continue".format(os.path.abspath(__file__))
+from pymatmc2 import MultiCellMonteCarlo
+
+PYMATMC2_CONTINUE_CMD = "python {} --continue {}".format(
+    os.path.abspath(__file__),
+    os.getcwd() 
+)
 PYMATMC2_STOP_CMD = "python {} --stop".format(os.path.abspath(__file__))
 PYMATMC2_CONTINUE_DESC = "pymatmc2_continue"
+
 
 @click.command()
 @click.option('--start', 'start_option', flag_value='start')
 @click.option('--continue', 'start_option', flag_value='continue')
 @click.option('--stop', 'start_option', flag_value='stop')
 @click.option('--none', 'start_option', flag_value='none', default=True)
-def main(start_option):
+@click.argument('path', default=os.getcwd())
+
+def main(start_option, path):
     start_options = {
         'start': pymatmc2_start,
         'continue': pymatmc2_continue,
         'stop': pymatmc2_stop,
         'none': pymatmc2_none
     }
-    start_options[start_option]()
+    print(path)
+    start_options[start_option](path=path)
 
-def pymatmc2_start():
+def pymatmc2_start(path: str):
     print(PYMATMC2_CONTINUE_CMD)
+    kwargs_mc2 = {
+        'configuration_path':'pymatmc2.config',
+        'results_path':'pymatmc2.results',
+        'logfile_path':'pymatmc2.log',
+        'simulations_path':'simulations',
+        'is_restart':False
+    }
+    o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
+    o_mc2.run()    
+    
     schedule_cron_job(
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
     print('start')
 
-def pymatmc2_continue():
-    print('continue')
+def pymatmc2_continue(path: str):
+    os.chdir(path)
+    kwargs_mc2 = {
+        'configuration_path':'pymatmc2.config',
+        'results_path':'pymatmc2.results',
+        'logfile_path':'pymatmc2.log',
+        'simulations_path':'simulations',
+        'is_restart':True
+    }
+    o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
+    o_mc2.run()    
 
-def pymatmc2_stop():
+def pymatmc2_stop(path: str):
     remove_cron_job(
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
     print('stop')
 
-def pymatmc2_none():
+def pymatmc2_none(path: str):
     msg = (
         "A description of the current option for pymatmc2\n"
         "mc2.py --start\n"
