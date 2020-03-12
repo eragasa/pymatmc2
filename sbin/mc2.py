@@ -6,7 +6,7 @@ from crontab import CronTab
 from pymatmc2 import MultiCellMonteCarlo
 
 PYMATMC2_CONTINUE_CMD = "python {} --continue {}".format(
-    os.path.abspath(__file__),
+    __file__,
     os.getcwd() 
 )
 PYMATMC2_STOP_CMD = "python {} --stop".format(os.path.abspath(__file__))
@@ -27,11 +27,9 @@ def main(start_option, path):
         'stop': pymatmc2_stop,
         'none': pymatmc2_none
     }
-    print(path)
     start_options[start_option](path=path)
 
 def pymatmc2_start(path: str):
-    print(PYMATMC2_CONTINUE_CMD)
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
         'results_path':'pymatmc2.results',
@@ -42,14 +40,15 @@ def pymatmc2_start(path: str):
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     o_mc2.run()    
     
+    print('start')
     schedule_cron_job(
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
-    print('start')
 
 def pymatmc2_continue(path: str):
     os.chdir(path)
+    
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
         'results_path':'pymatmc2.results',
@@ -76,6 +75,12 @@ def pymatmc2_none(path: str):
     )
     print(msg)
 
+    user = os.environ['USER']
+    my_cron = CronTab(user=user)
+    for job in my_cron:
+        print(job)
+
+
 def schedule_cron_job(command, description):
     user = os.environ['USER']
     my_cron = CronTab(user=user)
@@ -90,6 +95,7 @@ def schedule_cron_job(command, description):
     #write the crontab file
     my_cron.write()
 
+    print('job_is_valid:', job.is_valid())
 def remove_cron_job(command, description):
     user = os.environ['USER']
     my_cron = CronTab(user=user)
