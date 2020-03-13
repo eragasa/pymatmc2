@@ -1,11 +1,16 @@
-#!/usr/bin/env python
+#!/apps/python/3.6-conda5.2/bin/python
 import click
 import os
+import sys
 from crontab import CronTab
 
+sys.path.append('/users/PAA0028/eragasa/repos/pymatmc2/src')
+sys.path.append('/users/PAA0028/eragasa/repos/mexm-base/src')
+os.environ['VASP_POTPAW_GGA'] = '/users/PAA0028/eragasa/usr/local/vasp/potpaw/potpaw_PBE.54'
+ 
 from pymatmc2 import MultiCellMonteCarlo
 
-PYMATMC2_CONTINUE_CMD = "python {} --continue {}".format(
+PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(
     __file__,
     os.getcwd() 
 )
@@ -29,7 +34,7 @@ def main(start_option, path):
     }
     start_options[start_option](path=path)
 
-def pymatmc2_start(path: str):
+def pymatmc2_start(path):
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
         'results_path':'pymatmc2.results',
@@ -46,7 +51,7 @@ def pymatmc2_start(path: str):
         description=PYMATMC2_CONTINUE_DESC
     )
 
-def pymatmc2_continue(path: str):
+def pymatmc2_continue(path):
     os.chdir(path)
     
     kwargs_mc2 = {
@@ -59,14 +64,14 @@ def pymatmc2_continue(path: str):
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     o_mc2.run()    
 
-def pymatmc2_stop(path: str):
+def pymatmc2_stop(path):
     remove_cron_job(
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
     print('stop')
 
-def pymatmc2_none(path: str):
+def pymatmc2_none(path):
     msg = (
         "A description of the current option for pymatmc2\n"
         "mc2.py --start\n"
@@ -96,6 +101,7 @@ def schedule_cron_job(command, description):
     my_cron.write()
 
     print('job_is_valid:', job.is_valid())
+
 def remove_cron_job(command, description):
     user = os.environ['USER']
     my_cron = CronTab(user=user)
