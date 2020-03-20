@@ -1,6 +1,7 @@
 import os
 import copy
 import yaml
+from collections import OrderedDict
 from typing import Dict, List
 from mexm.io.filesystem import OrderedDictYAMLLoader
 
@@ -78,6 +79,14 @@ class Pymatmc2Configuration():
     @property
     def molar_fraction_total(self) -> List[float]:
         return self.configuration['atomic_configuration']['molar_fraction_total']
+
+    @property
+    def mutation_weights(self):
+        mutation_weights = OrderedDict()
+        for k, v in self.configuration['mutation_weights'].items():
+            mutation_weights[k] = v
+
+        return mutation_weights
 
     def read(self, path):
         """ read the configuration files

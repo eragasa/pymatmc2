@@ -280,7 +280,7 @@ class MultiCellMutateAlgorithmFactory(ABC):
     def configure(self, configuration):
         self.mutation_types = []
         self.mutation_weights = []
-        for k, v in configuration['mutate_weights'].items():
+        for k, v in configuration.mutation_weights.items():
             self.mutation_types.append(k)
             self.mutation_weights.append(v)
         
@@ -324,6 +324,7 @@ class MultiCellMutateAlgorithmFactory(ABC):
         for i, p in enumerate(self.cumulative_weights):
             if probability < p:
                 mutate_type = self.mutation_types[i]
+                break
         return mutate_type
 
     
