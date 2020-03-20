@@ -19,6 +19,8 @@ else (False)
         stop
     endif
     :calculate new structures;
+    :create_submission_scripts;
+    :submit_jobs;
 endif
 
 end

@@ -1,3 +1,5 @@
+import os
+import shutil
 from copy import deepcopy
 from collections import OrderedDict
 from typing import List
@@ -25,6 +27,26 @@ class MultiCell:
         self.configuration = None
         self.molar_fraction_total = None
         self.simulations = None
+
+    def get_simulation_paths(self, path):
+        return [os.path.join(path, k) for k in self.simulations]
+
+    def write(self, path: str):
+        """ write simulations to disk
+
+        Writes out the simulations to path.  Currently only tested with VASP simulations, but
+        should work with any subclass of the mexm.simulation.Simulation.
+
+        Arguments:
+            path (str): the path of the directory which to write the simulations
+        """
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        os.mkdir(path)
+        for simulation_name, simulation_obj in self.simulations.items():
+            simulation_path = os.path.join(path, simulation_name)
+            simulation_obj.write(path=simulation_path)
+
 
     @staticmethod
     def initialize_from_obj(multicell):

@@ -88,6 +88,10 @@ class Pymatmc2Configuration():
 
         return mutation_weights
 
+    @property
+    def max_iterations(self):
+        return self.configuration['max_iterations']
+
     def read(self, path):
         """ read the configuration files
 

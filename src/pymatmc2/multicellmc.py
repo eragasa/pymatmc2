@@ -184,8 +184,10 @@ class MultiCellMonteCarlo():
         self.logfile.log(message = message)
     
     def run(self):
+        is_max_iterations = False
         if self.is_restart:
             i_iteration, status = self.determine_current_iteration()
+
             if status == 'running':
                 self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
@@ -203,16 +205,21 @@ class MultiCellMonteCarlo():
                     self.create_next_simulations(i_iteration=next_iteration)
                     self.create_submission_scripts(i_iteration=next_iteration)
                     self.submit_jobs(i_iteration=next_iteration)
+                elif i_iteration > self.configuration.max_iterations:
+                    self.log('maximum iterations reached')
+                    is_max_iterations = True
+
                 else:
                     msg = "how are we at iteration {}".format(i_iteration)
                     raise ValueError(msg)
         else:
-            self.log('starting iteration 0')
-
             i_iteration = 0
+            self.log('starting iteration 0')
             self.create_simulations(i_iteration=i_iteration)
             self.create_submission_scripts(i_iteration=i_iteration)
             self.submit_jobs(i_iteration=i_iteration)
+
+        return is_max_iterations
 
     def get_job_name(self, cell_name: str, i_iteration: int) -> str:
         job_name_fmt = '{cell_name}_{iteration:03}_T{temperature}_P{pressure}'

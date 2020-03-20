@@ -17,7 +17,6 @@ PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(
 PYMATMC2_STOP_CMD = "python {} --stop".format(os.path.abspath(__file__))
 PYMATMC2_CONTINUE_DESC = "pymatmc2_continue"
 
-
 @click.command()
 @click.option('--start', 'start_option', flag_value='start')
 @click.option('--continue', 'start_option', flag_value='continue')
@@ -62,7 +61,10 @@ def pymatmc2_continue(path):
         'is_restart':True
     }
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
-    o_mc2.run()    
+    is_max_iterations = o_mc2.run()    
+
+    if is_max_iterations:
+        pymatmc2_stop(path=path)
 
 def pymatmc2_stop(path):
     remove_cron_job(

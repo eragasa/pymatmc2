@@ -72,6 +72,8 @@ def dev__mutate_multicell():
     multicell0 = get_multicell_iteration_0()
     obj = IntraphaseFlip()
     multicell1 = obj.mutate_multicell(multicell = multicell0)
+    
+    assert isinstance(multicell0, MultiCell)
     assert isinstance(multicell1, MultiCell)
 
 if __name__ == "__main__":

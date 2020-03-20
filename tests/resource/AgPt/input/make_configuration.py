@@ -15,14 +15,17 @@ configuration['hpc_manager']['configuration'] = {
     'modules':['intel/19.0.5', 'intelmpi/2019.3'],
     'cmd':'mpiexec $VASP_STD_BIN > vasp.out'
 }
+
 configuration['calculator'] = {
     'calculator':'vasp',
     'simulation_type':'vasp_min_all'
 }
+
 configuration['job_submission'] = {
     'hpc_type':'torque',
     'hpc_config_path':'osc.pitzer'
 }
+
 configuration['atomic_configuration'] = {
     'molar_fraction_total':{'Au':24, 'Pt':8},
     'simulation_cells':{
@@ -40,6 +43,7 @@ configuration['atomic_configuration'] = {
         }
     }
 }
+configuration['max_iterations'] = 10
 configuration['mutation_weights'] = {
     'interphase_swap':0.5,
     'interphase_flip':0.5

@@ -1,12 +1,11 @@
+import os
 import numpy as np
+from pymatmc2 import Pymatmc2Configuration
 from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 
-configuration_dict = {
-    'mutate_weights':{
-        'interphase_swap':.4,
-        'interphase_flip':.6
-    }   
-}
+configuration_path = 'pymatmc2.config'
+configuration = Pymatmc2Configuration()
+configuration.read(configuration_path)
 
 def dev__initialize():
     mcmutate = MultiCellMutateAlgorithmFactory()
@@ -18,8 +17,9 @@ def dev__configure():
     print(80*'-')
     print('MultiCellMutateAlgorithmFactory.configure')
     print(80*'-')
+
     mcmutate = MultiCellMutateAlgorithmFactory()
-    mcmutate.configure(configuration=configuration_dict)
+    mcmutate.configure(configuration=configuration)
 
     print('mutation_types:', mcmutate.mutation_types)
     print('mutation_weights:', mcmutate.mutation_weights)
@@ -31,11 +31,10 @@ def dev__determine_mutate_algorithm():
     print(80*'-')
     
     mcmutate = MultiCellMutateAlgorithmFactory()
-    mcmutate.configure(configuration=configuration_dict)
+    mcmutate.configure(configuration=configuration)
     mutate_type = mcmutate.determine_mutate_algorithm()
     
     print('mutate_type:', mutate_type)
-
 
 if __name__ == "__main__":
     dev__initialize()
