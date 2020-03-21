@@ -17,11 +17,13 @@ import os
 import shutil
 import random
 from copy import deepcopy
+from collections import OrderedDict
 
 from mexm.io.vasp import Poscar
 from mexm.simulation import VaspSimulation
 from mexm.job import JobSubmissionManagerFactory
 
+from pymatmc2 import MultiCell
 from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
@@ -57,7 +59,7 @@ class MultiCellMonteCarlo():
         configuration_path = 'pymatmc2.config',
         results_path = 'pymatmc2.results',
         logfile_path = 'pymatmc2.log',
-        simulations_path = None,
+        simulations_path = 'simulations',
         is_restart = True
     ):
         """
@@ -144,6 +146,20 @@ class MultiCellMonteCarlo():
             self.log(msg)
             raise TypeError(msg)
 
+    def get_simulation_path(self):
+
+        assert isinstance(self.configuration.temperature, float)
+        assert isinstance(self.configuration.pressure, float)
+        temperature = int(self.configuration.temperature)
+        pressure = int(self.configuration.pressure)
+
+        assert isinstance(temperature, int)
+        assert isinstance(pressure, int)
+        simulation_path_fmt = '{}K_{}GPa'
+        simulation_path = simulation_path_fmt.format(temperature, pressure)
+
+        return simulation_path
+
     def create_simulation_directory(
         self,
         path: str,
@@ -153,13 +169,30 @@ class MultiCellMonteCarlo():
         if is_restart:
             pass
         else:
-            # remove the existing simulation directory if it exists
-            if os.path.isdir(path):
-                self.log('removing existing simulation directory')
-                shutil.rmtree(path)
+            # remove the existing simulations directory if it exists
+            if not os.path.isdir(path):
+                self.log(
+                    'create simulations directory: {}'.format(
+                        path
+                    )
+                )
+                os.mkdir(path)
+            
+            simulation_path = os.path.join(
+                self.simulations_path,
+                self.get_simulation_path()
+            )
+
+            if os.path.isdir(simulation_path):
+                self.log(
+                    'removing existing simulation directory: {}'.format(
+                        self.get_simulation_path()
+                    )
+                )
+                shutil.rmtree(simulation_path)
             
             # create new simulation directory
-            os.mkdir(path)
+            os.mkdir(simulation_path)
 
     def start_results(self, path: str, is_restart: bool):
         """ start the results file
@@ -180,7 +213,7 @@ class MultiCellMonteCarlo():
             else:
                 self.results = Pymatmc2Results()
 
-    def log(self, message):
+    def log(self, message: str):
         self.logfile.log(message = message)
     
     def run(self):
@@ -215,7 +248,7 @@ class MultiCellMonteCarlo():
         else:
             i_iteration = 0
             self.log('starting iteration 0')
-            self.create_simulations(i_iteration=i_iteration)
+            self.create_iteration0_simulations()
             self.create_submission_scripts(i_iteration=i_iteration)
             self.submit_jobs(i_iteration=i_iteration)
 
@@ -231,6 +264,23 @@ class MultiCellMonteCarlo():
 
         )
         return job_name
+
+    def create_iteration0_simulations(self):
+        multicell = MultiCell.initialize_from_pymatmc2_configuration(
+            configuration = self.configuration
+        )
+
+        iteration_path = os.path.join(
+            self.simulations_path,
+            self.get_simulation_path(),
+            '00000'
+        )
+
+        if os.path.isdir(iteration_path):
+            shutil.rmtree(iteration_path)
+        os.mkdir(iteration_path)
+
+        multicell.write(iteration_path)
 
     def create_simulations(self, i_iteration: int):
         # for vasp simulations
@@ -267,7 +317,9 @@ class MultiCellMonteCarlo():
             script_kwargs['jobname'] = simulation_name
             script_path = os.path.join(
                 self.simulations_path,
-                simulation_name,
+                self.get_simulation_path(),
+                '{:05}'.format(i_iteration),
+                k,
                 'runjob.sh'
             )
             JobSubmissionManagerFactory.write_submission_script(
@@ -280,14 +332,12 @@ class MultiCellMonteCarlo():
         configuration_ = self.configuration.configuration
         hpc_type = configuration_['hpc_manager']['type']
         for k in self.configuration.simulation_cells:
-            simulation_name = self.get_job_name(
-                cell_name= k, 
-                i_iteration=i_iteration
-            )
 
             simulation_path = os.path.join(
                 self.simulations_path,
-                simulation_name
+                self.get_simulation_path(),
+                '{:05}'.format(i_iteration),
+                k
             )
 
             JobSubmissionManagerFactory.submit_job(
@@ -356,6 +406,7 @@ class MultiCellMonteCarlo():
             simulation_path = os.path.join(self.simulations_path, simulation_name)
             os.mkdir(simulation_path)
             simulations[k].write(simulation_path=simulation_path)
+
     def start_next_iteration(self):
         raise NotImplementedError
 

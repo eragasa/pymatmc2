@@ -51,7 +51,7 @@ class Pymatmc2Configuration():
     @property
     def calculator_type(self) -> str:
         """:(str) the energy calculator code being code """
-        return self.configuration['calculator']['calculator_type']
+        return self.configuration['calculator']['calculator']
 
     @property
     def simulation_type(self) -> str:
@@ -70,7 +70,8 @@ class Pymatmc2Configuration():
     
     @property
     def temperature(self) -> float:
-        return self.configuration['environment_variables']['temperature']
+        temperature = self.configuration['environment_variables']['temperature']
+        return temperature
 
     @property
     def pressure(self) -> float:

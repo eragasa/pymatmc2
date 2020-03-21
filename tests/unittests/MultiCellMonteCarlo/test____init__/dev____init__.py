@@ -1,7 +1,9 @@
 import os
 import shutil
 import subprocess
+from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import MultiCellMonteCarlo
+
 
 def create_configuration_file():
     make_configuration_path = os.path.join(
@@ -25,10 +27,11 @@ def cleanup():
         os.remove('pymatmc2.config')
     if os.path.isdir('simulations'):
         shutil.rmtree('simulations')
+        
+def dev____init____initial():
 
-
-if __name__ == "__main__":
     create_configuration_file()
+
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
         'results_path':'pymatmc2.results',
@@ -36,8 +39,14 @@ if __name__ == "__main__":
         'simulations_path':'simulations',
         'is_restart':False
     }
+
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
-    o_mc2.create_iteration0_simulations()
-    o_mc2.create_submission_scripts(i_iteration=0)
-    assert isinstance(o_mc2, MultiCellMonteCarlo)
+
     assert os.path.isdir('simulations')
+    assert os.path.isdir(
+        os.path.join('simulations', '400K_0GPa')
+    )
+
+    cleanup()
+if __name__ == "__main__":
+    dev____init____initial()

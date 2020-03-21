@@ -30,16 +30,40 @@ configuration['atomic_configuration'] = {
     'molar_fraction_total':{'Au':24, 'Pt':8},
     'simulation_cells':{
         'fcc1':{
-            'incar':os.path.join('resource','INCAR_1'),
-            'kpoints':os.path.join('resource','KPOINTS_1'),
-            'poscar':os.path.join('resource','POSCAR_1'),
-            'potcar':os.path.join('resource','POTCAR')
+            'incar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'INCAR_1'
+            ),
+            'kpoints':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'KPOINTS_1'
+            ),
+            'poscar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'POSCAR_1'
+            ),
+            'potcar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'POTCAR'
+            )
         },
         'fcc2':{
-            'incar':os.path.join('resource','INCAR_2'),
-            'kpoints':os.path.join('resource','KPOINTS_2'),
-            'poscar':os.path.join('resource','POSCAR_2'),
-            'potcar':os.path.join('resource','POTCAR')
+            'incar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'INCAR_2'
+            ),
+            'kpoints':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'KPOINTS_2'
+            ),
+            'poscar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'POSCAR_2'
+            ),
+            'potcar':os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'POTCAR'
+            )
         }
     }
 }

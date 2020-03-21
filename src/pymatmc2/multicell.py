@@ -42,10 +42,12 @@ class MultiCell:
         """
         if os.path.isdir(path):
             shutil.rmtree(path)
+        
         os.mkdir(path)
         for simulation_name, simulation_obj in self.simulations.items():
             simulation_path = os.path.join(path, simulation_name)
-            simulation_obj.write(path=simulation_path)
+            os.mkdir(simulation_path)
+            simulation_obj.write(simulation_path=simulation_path)
 
 
     @staticmethod
