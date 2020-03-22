@@ -349,26 +349,42 @@ class MultiCellMonteCarlo():
     def determine_current_iteration(self) -> int:
         i_iteration = 0
         status = None
-        while True:
-            cell_names = [
-                k for k in self.configuration.simulation_cells
-            ]
 
-            simulation_names = [
-                self.get_job_name(k, i_iteration) for k in cell_names
-            ]
-            
-            simulation_paths = [
-                os.path.join(self.simulations_path, k) for k in simulation_names
-            ]
-            
-            if not all([os.path.isdir(k) for k in simulation_paths]):
+        while True:
+
+            cell_names = []
+            for k in self.configuration.simulation_cells:
+                cell_names.append(k)
+                
+            simulation_paths = []
+            for k in cell_names:
+                path = os.path.join(
+                    self.simulations_path,
+                    self.get_simulation_path(),
+                    '{:05}'.format(i_iteration),
+                    k                    
+                )
+                simulation_paths.append(path)
+
+            simulations_created_array = []
+            for k in simulation_paths:
+                simulations_created_array.append(
+                    os.path.isdir(k)
+                )
+
+            if not all(simulations_created_array):
                 i_iteration -= 1
                 break
             else:
-                if all([
-                    os.path.isfile(os.path.join(k,'jobComplete')) for k in simulation_paths
-                ]):
+                job_complete_array = []
+                for k in simulation_paths:
+                    job_complete_array.append(
+                        os.path.isfile(
+                            os.path.join(k,'jobComplete')
+                        )
+                    )
+                
+                if all(job_complete_array):
                     status = 'complete'
                 else:
                     status = 'running'
