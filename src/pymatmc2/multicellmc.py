@@ -252,12 +252,15 @@ class MultiCellMonteCarlo():
                     multicell = mutator.mutate_cells(multicell0)
                     multicell.write(path=multicell_path)
 
-
                     with open(
                         os.path.join(multicell_path, 'mutate_type'),
                         'w'
                     ) as f:
                         f.write(mutate_type)
+
+                    self.create_submission_scripts(i_iteration=i_iteration)
+                    self.submit_jobs(i_iteration=i_iteration)
+
 
                 elif i_iteration > 0:
                     next_iteration = i_iteration + 1
