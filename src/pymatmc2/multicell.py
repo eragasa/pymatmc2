@@ -103,6 +103,7 @@ class MultiCell:
             configuration (Pymatmc2Configuration)
         """
         obj = MultiCell()
+        obj.configuration = configuration
 
         simulation_cells = configuration.simulation_cells
         order_simulation_cells = OrderedDict(
@@ -117,10 +118,6 @@ class MultiCell:
                 obj.simulations[k].potcar.read(path=v['potcar'])
                 obj.simulations[k].kpoints.read(path=v['kpoints']) 
 
-        molar_fraction_total = configuration.molar_fraction_total
-        obj.molar_fraction_total = {
-            k:v/sum(molar_fraction_total.values()) for k, v in molar_fraction_total.items()
-        }
         return obj
     
     @property

@@ -346,10 +346,9 @@ class MultiCellMonteCarlo():
             simulations[k].write(simulation_path=simulation_path)
 
     def create_submission_scripts(self, i_iteration: int):
-        simulation_names = []
+
         for k in self.configuration.simulation_cells:
-            simulation_name = self.get_job_name(cell_name= k, i_iteration=i_iteration)
-            simulation_names.append(simulation_name)
+            simulation_name = '{:05}_{}'.format(i_iteration, k)
 
             configuration_ = self.configuration.configuration
             hpc_type = configuration_['hpc_manager']['type']
