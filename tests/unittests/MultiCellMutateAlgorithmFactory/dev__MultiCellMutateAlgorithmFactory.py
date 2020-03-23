@@ -35,6 +35,7 @@ def dev__determine_mutate_algorithm():
     mutate_type = mcmutate.determine_mutate_algorithm()
     
     print('mutate_type:', mutate_type)
+    assert mcmutate.mutate_type == mutate_type
 
 if __name__ == "__main__":
     dev__initialize()

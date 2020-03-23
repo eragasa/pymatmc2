@@ -69,8 +69,8 @@ configuration['atomic_configuration'] = {
 }
 configuration['max_iterations'] = 10
 configuration['mutation_weights'] = {
-    'interphase_swap':0.5,
-    'interphase_flip':0.5
+    'intraphase_swap':0.5,
+    'intraphase_flip':0.5
 }
 configuration['environment_variables'] = {
     'temperature':400.0,

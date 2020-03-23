@@ -228,13 +228,64 @@ class MultiCellMonteCarlo():
                 if i_iteration == 0:
                     next_iteration = i_iteration + 1
                     self.log('starting interation {}'.format(next_iteration))
-                    self.create_next_simulations(i_iteration=next_iteration)
-                    self.create_submission_scripts(i_iteration=next_iteration)
-                    self.submit_jobs(i_iteration=next_iteration)
+                    
+                    # process previous iteration
+                    multicell0_path = os.path.join(
+                        self.simulations_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(i_iteration)
+                    )
+
+                    multicell0 = MultiCell()
+                    multicell0.configuration = self.configuration
+                    multicell0.read(path=multicell0_path)
+
+                    # create new simulations
+                    multicell_path = os.path.join(
+                        self.simulations_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(next_iteration)
+                    )
+                    mutator = MultiCellMutateAlgorithmFactory()
+                    mutator.configure(configuration=self.configuration)
+                    mutate_type = mutator.determine_mutate_algorithm()
+                    multicell = mutator.mutate_cells(multicell0)
+                    multicell.write(path=multicell_path)
+
+
+                    with open(
+                        os.path.join(multicell_path, 'mutate_type'),
+                        'w'
+                    ) as f:
+                        f.write(mutate_type)
+
                 elif i_iteration > 0:
                     next_iteration = i_iteration + 1
+
+                    # process previous iteration
+                    multicell0_path = os.path.join(
+                        self.simulations_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(i_iteration)
+                    )
+                    multicell1_path = os.path.join(
+                        self.simulations_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(i_iteration-1)
+                    )
+                    
+                    multicell0 = MultiCell()
+                    multicell0.configuration = self.configuration
+                    multicell0.read(path=multicell0_path)
+
+                    multicell1 = MultiCell()
+                    multicell1.configuration = self.configuration
+                    multicell1.read(path=multicell1_path)
+
                     self.log('starting iteration {}'.format(next_iteration))
-                    self.determine_acceptance_rejection(i_iteration=next_iteration)
+                    
+                    
+                    self.determine_acceptance_rejection()(i_iteration=next_iteration)
                     self.create_next_simulations(i_iteration=next_iteration)
                     self.create_submission_scripts(i_iteration=next_iteration)
                     self.submit_jobs(i_iteration=next_iteration)
@@ -253,17 +304,6 @@ class MultiCellMonteCarlo():
             self.submit_jobs(i_iteration=i_iteration)
 
         return is_max_iterations
-
-    def get_job_name(self, cell_name: str, i_iteration: int) -> str:
-        job_name_fmt = '{cell_name}_{iteration:03}_T{temperature}_P{pressure}'
-        job_name = job_name_fmt.format(
-            cell_name = cell_name,
-            iteration = i_iteration,
-            temperature = int(self.configuration.temperature),
-            pressure = int(self.configuration.pressure)
-
-        )
-        return job_name
 
     def create_iteration0_simulations(self):
         multicell = MultiCell.initialize_from_pymatmc2_configuration(

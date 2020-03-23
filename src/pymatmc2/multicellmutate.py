@@ -9,6 +9,7 @@ from mexm.io.vasp import Poscar
 from mexm.simulation import VaspSimulation
 
 # import from pymatmc2
+from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import MultiCell
 from pymatmc2 import constants
 
@@ -167,7 +168,7 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
             return rtn_multicell
 
 class InterphaseSwap(MultiCellMutateAlgorithm):
-    mutate_type = 'interaphase_swap'
+    mutate_type = 'interphase_swap'
 
     def mutate_multicell(
         self,
@@ -201,7 +202,7 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                 obj = simulation.contcar
             )
 
-            idx_atoms = list(range(len(cell.n_atoms)))
+            idx_atoms = list(range(cell.n_atoms))
             idx_atom = np.random.choice(idx_atoms, 1)[0]
 
             old_symbol = cell.atomic_basis[idx_atom].symbol
@@ -269,15 +270,17 @@ class MultiCellMutateAlgorithmFactory(ABC):
     factories = {
         'interphase_swap': InterphaseSwap,
         'intraphase_swap': IntraphaseSwap,
-        'interphase_flip': IntraphaseFlip
+        'intraphase_flip': IntraphaseFlip
     }
 
     def __init__(self):
+        self.configuration = None
         self.mutation_types = None
         self.mutation_weights = None
         self.cumulative_weights = None
 
-    def configure(self, configuration):
+    def configure(self, configuration: Pymatmc2Configuration):
+        self.configuration = configuration
         self.mutation_types = []
         self.mutation_weights = []
         for k, v in configuration.mutation_weights.items():
@@ -289,6 +292,15 @@ class MultiCellMutateAlgorithmFactory(ABC):
             self.cumulative_weights.append(
                 sum(self.mutation_weights[:k+1])
             )
+
+        self.cell_names = self.configuration.cell_names
+
+    def read_simulations(self, i_iteration):
+        self.multicell_initial = MultiCell()
+        self.multicell_initial.configuration = self.configuration
+        self.multicell_candidate = MultiCell()
+        self.multicell_candidate.conditation = self.configuration
+        
 
     def accept_or_reject(
         self, 
@@ -311,11 +323,10 @@ class MultiCellMutateAlgorithmFactory(ABC):
         )
 
         return is_accept, multicell
-        
 
     def mutate_cells(self, multicell: MultiCell) -> MultiCell:
-        mutate_type = self.determine_mutate_algorithm()
-        mutator = self.factories[mutate_type]()
+        self.mutate_type = self.determine_mutate_algorithm()
+        mutator = self.factories[self.mutate_type]()
         return mutator.mutate_multicell(multicell = multicell)
 
     def determine_mutate_algorithm(self):
@@ -325,6 +336,7 @@ class MultiCellMutateAlgorithmFactory(ABC):
             if probability < p:
                 mutate_type = self.mutation_types[i]
                 break
+        self.mutate_type = mutate_type
         return mutate_type
 
     

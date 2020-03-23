@@ -2,7 +2,7 @@ import os
 import shutil
 from copy import deepcopy
 from collections import OrderedDict
-from typing import List
+from typing import List, Dict
 import numpy as np
 from numpy import linalg
 from mexm.io.vasp import Poscar
@@ -25,11 +25,42 @@ class MultiCell:
         """
         """
         self.configuration = None
-        self.molar_fraction_total = None
+        self._molar_fraction_total = None
         self.simulations = None
+
+    @property
+    def molar_fraction_total(self) -> Dict[str, float]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+
+        molar_fraction_total = self.configuration.molar_fraction_total
+        molar_fraction_total = OrderedDict()
+
+        sum_molar_fraction_total = sum(self.molar_fraction_total.values())
+        for k, v in self.configuration.molar_fraction_total.items():
+            molar_fraction_total[k] = v/sum_molar_fraction_total
+
+        return molar_fraction_total
 
     def get_simulation_paths(self, path):
         return [os.path.join(path, k) for k in self.simulations]
+
+    def read(self, path: str):
+        """ read simulations from disk
+
+        Arguments:
+            path (str)
+        """
+
+        assert os.path.isdir(path)
+        self.simulations = OrderedDict()
+        
+        for cell_name in self.configuration.simulation_cells:
+            if self.configuration.calculator_type == 'vasp':
+                self.simulations[cell_name] = VaspSimulation()
+                self.simulations[cell_name].read(
+                    os.path.join(path, cell_name)
+                )
+
 
     def write(self, path: str):
         """ write simulations to disk

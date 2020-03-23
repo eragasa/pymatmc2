@@ -69,6 +69,12 @@ class Pymatmc2Configuration():
         return self.configuration['atomic_configuration']['simulation_cells']
     
     @property
+    def cell_names(self) -> List[str]:
+        cell_names = [k for k in self.simulation_cells] 
+        return cell_names
+
+
+    @property
     def temperature(self) -> float:
         temperature = self.configuration['environment_variables']['temperature']
         return temperature
