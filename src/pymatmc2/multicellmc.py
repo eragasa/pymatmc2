@@ -258,8 +258,8 @@ class MultiCellMonteCarlo():
                     ) as f:
                         f.write(mutate_type)
 
-                    self.create_submission_scripts(i_iteration=i_iteration)
-                    self.submit_jobs(i_iteration=i_iteration)
+                    self.create_submission_scripts(i_iteration=next_iteration)
+                    self.submit_jobs(i_iteration=next_iteration)
 
 
                 elif i_iteration > 0:
