@@ -57,7 +57,7 @@ class MultiCellMonteCarlo():
     def __init__(
         self,
         configuration_path = 'pymatmc2.config',
-        results_path = 'pymatmc2.results',
+        results_path = 'results',
         logfile_path = 'pymatmc2.log',
         simulations_path = 'simulations',
         is_restart = True
@@ -76,6 +76,7 @@ class MultiCellMonteCarlo():
 
         self.is_restart = is_restart
         self.simulations_path = simulations_path
+        self.results_path = results_path
 
         self.start_logging(
             path = logfile_path, 
@@ -96,13 +97,13 @@ class MultiCellMonteCarlo():
             is_restart = self.is_restart
         )
 
-        self.start_results(
-            path = results_path,
+        self.create_results_directory(
+            path = self.results_path,
             is_restart = self.is_restart
         )
 
         assert isinstance(self.configuration, Pymatmc2Configuration)
-        assert isinstance(self.results, Pymatmc2Results)
+        # assert isinstance(self.results, Pymatmc2Results)
         assert isinstance(self.logfile, Pymatmc2Log)
         assert os.path.isdir(self.simulations_path)
     
@@ -172,9 +173,7 @@ class MultiCellMonteCarlo():
             # remove the existing simulations directory if it exists
             if not os.path.isdir(path):
                 self.log(
-                    'create simulations directory: {}'.format(
-                        path
-                    )
+                    'create simulations directory: {}'.format(path)
                 )
                 os.mkdir(path)
             
@@ -184,34 +183,50 @@ class MultiCellMonteCarlo():
             )
 
             if os.path.isdir(simulation_path):
-                self.log(
-                    'removing existing simulation directory: {}'.format(
-                        self.get_simulation_path()
-                    )
-                )
+                msg = 'removing existing simulation directory: {}'.format(
+                    self.get_simulation_path()
+                ) 
+                self.log(msg)
                 shutil.rmtree(simulation_path)
             
             # create new simulation directory
             os.mkdir(simulation_path)
 
-    def start_results(self, path: str, is_restart: bool):
-        """ start the results file
-
-        Arguments:
-            path (str): path to the results file
-            is_restart (bool): If set to true, it will ignore the 
-                file there
-        """
-
+    def create_results_directory(self, path: str, is_restart: bool):
         if is_restart:
-            self.results = Pymatmc2Results()
-            # self.results.read()
+            pass
         else:
-            if os.path.isfile(path):
-                self.log('removing existing results file')
-                os.remove(path)
-            else:
-                self.results = Pymatmc2Results()
+            if not os.path.isdir(path):
+                self.log(
+                    'create results directory: {}'.format(path)
+                )
+            
+            results_path = os.path.join(
+                self.results_path,
+                self.get_results_path()
+            )
+
+            if os.path.isdir(results_path):
+                msg = 'removing existing results directory: {}'.format(
+                    self.get_results_path()
+                )
+                self.log(msg)
+                shutil.rmtree(results_path)
+
+            os.mkdir(results_path)
+
+    def get_results_path(self) -> str:
+        assert isinstance(self.configuration.temperature, float)
+        assert isinstance(self.configuration.pressure, float)
+        temperature = int(self.configuration.temperature)
+        pressure = int(self.configuration.pressure)
+
+        assert isinstance(temperature, int)
+        assert isinstance(pressure, int)
+        results_path_fmt = '{}K_{}GPa'
+        results_path = results_path_fmt.format(temperature, pressure)
+
+        return results_path
 
     def log(self, message: str):
         self.logfile.log(message = message)
@@ -240,6 +255,13 @@ class MultiCellMonteCarlo():
                     multicell0.configuration = self.configuration
                     multicell0.read(path=multicell0_path)
 
+                    results_path = os.path.join(
+                        self.results_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(i_iteration)
+                    )
+                    multicell0.write(results_path)
+                            
                     # create new simulations
                     multicell_path = os.path.join(
                         self.simulations_path,
@@ -265,16 +287,18 @@ class MultiCellMonteCarlo():
                 elif i_iteration > 0:
                     next_iteration = i_iteration + 1
 
-                    # process previous iteration
+                    # get initial cell
                     multicell0_path = os.path.join(
-                        self.simulations_path,
+                        self.results_path,
                         self.get_simulation_path(),
-                        '{:05}'.format(i_iteration)
+                        '{:05}'.format(i_iteration-1)
                     )
+
+                    # get candidate cell
                     multicell1_path = os.path.join(
                         self.simulations_path,
                         self.get_simulation_path(),
-                        '{:05}'.format(i_iteration-1)
+                        '{:05}'.format(i_iteration)
                     )
                     
                     multicell0 = MultiCell()
@@ -285,13 +309,52 @@ class MultiCellMonteCarlo():
                     multicell1.configuration = self.configuration
                     multicell1.read(path=multicell1_path)
 
+                    with open(multicell1_path) as f:
+                        mutate_type = f.read()
+                    mutate_type = mutate_type.strip()
+
+
+                    mutator = MultiCellMutateAlgorithmFactory()
+                    mutator.configure(configuration=self.configuration)
+                    is_accept, multicell_accept = mutator.accept_or_reject(
+                        multicell_initial=multicell0,
+                        multicell_candidate=multicell1,
+                        temperature=self.configuration.temperature,
+                        mutate_type=mutate_type
+                    )
+
+                    archive_path = os.path.join(
+                        self.results_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(i_iteration)
+                    )
+                    multicell_accept.write(path=archive_path)
+                    with open(os.path.join(archive_path, 'mutate_type'), 'w') as f:
+                        f.write(mutate_type)
+                    with open(os.path.join(archive_path, 'archive_path'), 'w') as f:
+                        f.write(is_accept)
+
                     self.log('starting iteration {}'.format(next_iteration))
-                    
-                    
-                    self.determine_acceptance_rejection()(i_iteration=next_iteration)
-                    self.create_next_simulations(i_iteration=next_iteration)
+                    mutator = MultiCellMutateAlgorithmFactory()
+                    mutator.configure(configuration=self.configuration)
+                    multicell_path = os.path.join(
+                        self.simulations_path,
+                        self.get_simulation_path(),
+                        '{:05}'.format(next_iteration)
+                    )                    
+                    mutate_type = mutator.determine_mutate_algorithm()
+                    multicell_candidate = mutator.mutate_cells(multicell_accept)
+                    multicell_candidate.write(path=multicell_path)
+
+                    with open(
+                        os.path.join(multicell_path, 'mutate_type'),
+                        'w'
+                    ) as f:
+                        f.write(mutate_type)
+
                     self.create_submission_scripts(i_iteration=next_iteration)
                     self.submit_jobs(i_iteration=next_iteration)
+
                 elif i_iteration > self.configuration.max_iterations:
                     self.log('maximum iterations reached')
                     is_max_iterations = True
@@ -324,29 +387,6 @@ class MultiCellMonteCarlo():
         os.mkdir(iteration_path)
 
         multicell.write(iteration_path)
-
-    def create_simulations(self, i_iteration: int):
-        # for vasp simulations
-        simulations = {}
-        simulation_names = []
-        for k, v in self.configuration.simulation_cells.items():
-            simulation_name = self.get_job_name(
-                cell_name= k, 
-                i_iteration=i_iteration
-            )
-            
-            simulation_names.append(simulation_name)
-            simulations[k] = VaspSimulation()
-            simulations[k].incar.read(v['incar'])
-            simulations[k].poscar.read(v['poscar'])
-            simulations[k].kpoints.read(v['kpoints'])
-            simulations[k].potcar.read(v['potcar'])
-
-            # abstract Simulation.write()
-            simulation_path = os.path.join(self.simulations_path, simulation_name)
-            print(simulation_path)
-            os.mkdir(simulation_path)
-            simulations[k].write(simulation_path=simulation_path)
 
     def create_submission_scripts(self, i_iteration: int):
 
@@ -434,39 +474,6 @@ class MultiCellMonteCarlo():
             i_iteration += 1
 
         return i_iteration, status
-
-    def create_next_simulations(self, i_iteration: int):
-        simulations = {}
-        for k, v in self.configuration.simulation_cells.items():
-            contcar_path = os.path.join(
-                self.simulations_path,
-                self.get_job_name(k, i_iteration-1),
-                'CONTCAR')
-            simulations[k] = VaspSimulation()
-            simulations[k].incar.read(v['incar'])
-            simulations[k].poscar.read(contcar_path)
-            simulations[k].kpoints.read(v['kpoints'])
-            simulations[k].potcar.read(v['potcar'])
-
-        for k, v in simulations.items():
-            import random
-            n_atoms = len(v.poscar.atomic_basis)
-            i_atom = random.randint(0,n_atoms-1)
-            original_symbol = v.poscar.atomic_basis[i_atom].symbol
-            symbols = list(v.poscar.symbols)
-            symbols.remove(original_symbol)
-            new_symbol = random.choice(symbols)
-            print(k,'[{}]'.format(i_atom),':',original_symbol,'->',new_symbol)
-            simulations[k].poscar.atomic_basis[i_atom].symbol = new_symbol
-
-        for k, v in simulations.items():
-            simulation_name = self.get_job_name(cell_name=k, i_iteration=i_iteration)
-            simulation_path = os.path.join(self.simulations_path, simulation_name)
-            os.mkdir(simulation_path)
-            simulations[k].write(simulation_path=simulation_path)
-
-    def start_next_iteration(self):
-        raise NotImplementedError
 
 if __name__ == "__main__":
     mc2 = MultiCellMonteCarlo(is_restart=False)
