@@ -36,7 +36,7 @@ def main(start_option, path):
 def pymatmc2_start(path):
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
-        'results_path':'pymatmc2.results',
+        'results_path':'results',
         'logfile_path':'pymatmc2.log',
         'simulations_path':'simulations',
         'is_restart':False
@@ -55,7 +55,7 @@ def pymatmc2_continue(path):
     
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
-        'results_path':'pymatmc2.results',
+        'results_path':'results',
         'logfile_path':'pymatmc2.log',
         'simulations_path':'simulations',
         'is_restart':True

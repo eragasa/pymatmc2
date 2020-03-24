@@ -35,7 +35,7 @@ class MultiCell:
         molar_fraction_total = self.configuration.molar_fraction_total
         molar_fraction_total = OrderedDict()
 
-        sum_molar_fraction_total = sum(self.molar_fraction_total.values())
+        sum_molar_fraction_total = sum(self.configuration.molar_fraction_total.values())
         for k, v in self.configuration.molar_fraction_total.items():
             molar_fraction_total[k] = v/sum_molar_fraction_total
 
@@ -243,7 +243,10 @@ class MultiCell:
         f = np.dot(linalg.inv(X), c)
         for k in f:
             if k < 0:
-                msg = "phase molar fraction cannot be negative"
+                msg = "phase molar fraction cannot be negative\n"
+                msg += "X:{}\n".format(X)
+                msg += "c:{}\n".format(c)
+                msg += "f:{}\n".format(f)
                 raise MultiCellError(msg)
         return f.tolist()
         

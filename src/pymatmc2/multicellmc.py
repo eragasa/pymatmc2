@@ -200,7 +200,8 @@ class MultiCellMonteCarlo():
                 self.log(
                     'create results directory: {}'.format(path)
                 )
-            
+                os.mkdir(path)
+ 
             results_path = os.path.join(
                 self.results_path,
                 self.get_results_path()
@@ -309,10 +310,11 @@ class MultiCellMonteCarlo():
                     multicell1.configuration = self.configuration
                     multicell1.read(path=multicell1_path)
 
-                    with open(multicell1_path) as f:
+                    # get mutate type
+                    mutate_file_path = os.path.join(multicell1_path, 'mutate_type')
+                    with open(mutate_file_path) as f:
                         mutate_type = f.read()
                     mutate_type = mutate_type.strip()
-
 
                     mutator = MultiCellMutateAlgorithmFactory()
                     mutator.configure(configuration=self.configuration)

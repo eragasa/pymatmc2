@@ -316,7 +316,9 @@ class MultiCellMutateAlgorithmFactory(ABC):
             MultiCell: returns the new structure
         """
 
-        is_accept, multicell = self.factories[mutate_type].accept_or_reject(
+        mutator = self.factories[mutate_type]()
+        mutator.configuration = self.configuration
+        is_accept, multicell = mutator.accept_or_reject(
             multicell_initial = multicell_initial,
             multicell_candidate = multicell_candidate,
             temperature = temperature
