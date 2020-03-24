@@ -63,6 +63,7 @@ def pymatmc2_continue(path):
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     is_max_iterations = o_mc2.run()    
 
+    print('is_max_iterations:',is_max_iterations)
     if is_max_iterations:
         pymatmc2_stop(path=path)
 

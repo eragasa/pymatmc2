@@ -243,12 +243,16 @@ class MultiCell:
         f = np.dot(linalg.inv(X), c)
         for k in f:
             if k < 0:
-                msg = "phase molar fraction cannot be negative\n"
-                msg += "X:{}\n".format(X)
-                msg += "c:{}\n".format(c)
-                msg += "f:{}\n".format(f)
-                raise MultiCellError(msg)
-        return f.tolist()
+                # msg = "phase molar fraction cannot be negative\n"
+                # msg += "X:{}\n".format(X)
+                # msg += "c:{}\n".format(c)
+                # msg += "f:{}\n".format(f)
+                # raise MultiCellError(msg)
+                from scipy.optimize import nnls
+                f, residuals = nnls(X,c)
+                break 
+        
+        return {v:f[i] for i,v in enumerate(self.cell_names)}
         
     def get_number_of_atoms(self, symbol=None):
         n_atoms = 0

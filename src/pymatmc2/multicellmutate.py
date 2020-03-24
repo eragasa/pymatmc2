@@ -142,9 +142,12 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
         rtn_multicell.simulations = {}
 
         phases = [k for k in multicell_initial.simulations]
+        is_accept_phase_array = []
         for phase in phases:
             E0 = multicell_initial.simulations[phase].total_energy
             E1 = multicell_candidate.simulations[phase].total_energy
+            assert isinstance(E0, float)
+            assert isinstance(E1, float)
             if E1 < E0:
                 is_accept_phase = True
             else:
@@ -164,8 +167,8 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
             else:
                 rtn_multicell.simulations[phase] \
                     = multicell_initial.simulations[phase]
-            
-            return rtn_multicell
+            is_accept_phase_array.append(is_accept_phase) 
+        return any(is_accept_phase_array), rtn_multicell
 
 class InterphaseSwap(MultiCellMutateAlgorithm):
     mutate_type = 'interphase_swap'
@@ -262,9 +265,9 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                 is_accept = False
 
         if is_accept:
-            return multicell_candidate
+            return True, multicell_candidate
         else:
-            return multicell_initial
+            return False, multicell_initial
 
 class MultiCellMutateAlgorithmFactory(ABC):
     factories = {
@@ -315,6 +318,11 @@ class MultiCellMutateAlgorithmFactory(ABC):
             bool: True if the candidate structure is accepted
             MultiCell: returns the new structure
         """
+
+        assert isinstance(multicell_initial, MultiCell)
+        assert isinstance(multicell_candidate, MultiCell)
+        assert isinstance(temperature, float)
+        assert isinstance(mutate_type, str)
 
         mutator = self.factories[mutate_type]()
         mutator.configuration = self.configuration

@@ -241,7 +241,11 @@ class MultiCellMonteCarlo():
                 self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
             else:
-                if i_iteration == 0:
+                if i_iteration > self.configuration.max_iterations:
+                    self.log('maximum iterations reached')
+                    is_max_iterations = True
+                
+                elif i_iteration == 0:
                     next_iteration = i_iteration + 1
                     self.log('starting interation {}'.format(next_iteration))
                     
@@ -261,7 +265,10 @@ class MultiCellMonteCarlo():
                         self.get_simulation_path(),
                         '{:05}'.format(i_iteration)
                     )
-                    multicell0.write(results_path)
+                    shutil.copytree(
+                        src=multicell0_path,
+                        dst=results_path
+                    )
                             
                     # create new simulations
                     multicell_path = os.path.join(
@@ -301,7 +308,7 @@ class MultiCellMonteCarlo():
                         self.get_simulation_path(),
                         '{:05}'.format(i_iteration)
                     )
-                    
+                  
                     multicell0 = MultiCell()
                     multicell0.configuration = self.configuration
                     multicell0.read(path=multicell0_path)
@@ -315,6 +322,11 @@ class MultiCellMonteCarlo():
                     with open(mutate_file_path) as f:
                         mutate_type = f.read()
                     mutate_type = mutate_type.strip()
+
+                    assert isinstance(multicell0, MultiCell)
+                    assert isinstance(multicell1, MultiCell)
+                    assert isinstance(self.configuration.temperature, float)
+                    assert isinstance(mutate_type, str)
 
                     mutator = MultiCellMutateAlgorithmFactory()
                     mutator.configure(configuration=self.configuration)
@@ -330,11 +342,19 @@ class MultiCellMonteCarlo():
                         self.get_simulation_path(),
                         '{:05}'.format(i_iteration)
                     )
-                    multicell_accept.write(path=archive_path)
+                    if is_accept:
+                        src_path = multicell0_path
+                    else:
+                        src_path = multicell1_path
+
+                    shutil.copytree(
+                        src=src_path,
+                        dst=archive_path
+                    )
                     with open(os.path.join(archive_path, 'mutate_type'), 'w') as f:
                         f.write(mutate_type)
-                    with open(os.path.join(archive_path, 'archive_path'), 'w') as f:
-                        f.write(is_accept)
+                    with open(os.path.join(archive_path, 'is_accept'), 'w') as f:
+                        f.write(str(is_accept))
 
                     self.log('starting iteration {}'.format(next_iteration))
                     mutator = MultiCellMutateAlgorithmFactory()
@@ -357,9 +377,6 @@ class MultiCellMonteCarlo():
                     self.create_submission_scripts(i_iteration=next_iteration)
                     self.submit_jobs(i_iteration=next_iteration)
 
-                elif i_iteration > self.configuration.max_iterations:
-                    self.log('maximum iterations reached')
-                    is_max_iterations = True
 
                 else:
                     msg = "how are we at iteration {}".format(i_iteration)
