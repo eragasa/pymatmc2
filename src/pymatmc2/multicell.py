@@ -16,6 +16,8 @@ class MultiCell:
     """
 
     Attributes:
+        src_path (str)
+        dst_path (str)
         configuration (Pymatmc2Configuration)
         molar_fraction_total (List[float])
         simulations (Dict[str, Simulation])
@@ -24,6 +26,8 @@ class MultiCell:
     def __init__(self):
         """
         """
+        self.src_path = None
+        self.dst_path = None
         self.configuration = None
         self._molar_fraction_total = None
         self.simulations = None
@@ -148,6 +152,7 @@ class MultiCell:
         """
 
         assert os.path.isdir(path)
+        self.src_path = path
         self.simulations = OrderedDict()
         
         for cell_name in self.configuration.simulation_cells:

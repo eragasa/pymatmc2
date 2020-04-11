@@ -18,7 +18,36 @@ from pymatmc2 import constants
 class MultiCellMutateAlgorithm(ABC):
     def __init__(self):
         self.multicell = None
+        self._multicell_initial = None
+        self._multicell_candidate = None
+        self._multicell_final = None
 
+    @property
+    def multicell_initial(self) -> MultiCell:
+        return self._multicell_initial
+
+    @multicell_initial.setter
+    def multicell_initial(self, mc: MultiCell):
+        assert isinstance(mc, MultiCell)
+        self._multicell_initial = mc
+
+    @property
+    def multicell_candidate(self) -> MultiCell:
+        return self._multicell_candidate
+
+    @multicell_candidate.setter
+    def multicell_candidate(self, mc: MultiCell):
+        assert isinstance(mc, MultiCell)
+        self._multicell_candidate = mc
+
+    @property
+    def multicell_final(self) -> MultiCell:
+        return self._multicell_final
+
+    @multicell_final.setter
+    def multicell_final(self, mc: MultiCell):
+        assert isinstance(mc, MultiCell)
+        self._multicell_final = mc
     @abstractmethod
     def mutate_multicell(
         self,
@@ -196,10 +225,13 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
     def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
         """ create a new candidate multicell
 
+        Create a deepcopy of multicell to the attribute multicell_initial.
+
+
         Arguments:
             multicell (MultiCell): the initial multicell from which to get a    candidate
         """
-
+        self.multicell_initial = deepcopy(multicell)
         rtn_multicell = MultiCell.initialize_from_obj(multicell=multicell)
         while True:
             try:
@@ -241,7 +273,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                 break
             except linalg.LinAlgError:
                 pass
-               
+        
+        self.multicell_candidate = rtn_multicell
         return rtn_multicell
 
     def acceptance_probability(
