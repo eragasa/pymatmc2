@@ -47,7 +47,7 @@ class MultiCell:
         return obj
 
     @staticmethod
-    def initialize_from_pymatmc2_configuration(
+    def initialize_from_configuration(
         configuration: Pymatmc2Configuration
     ):
         """
@@ -179,6 +179,16 @@ class MultiCell:
             simulation_path = os.path.join(path, simulation_name)
             os.mkdir(simulation_path)
             simulation_obj.write(simulation_path=simulation_path)
+
+    def archive(self, dst_path: str):
+
+        if os.path.isdir(dst_path):
+            shutil.rmtree(dst_path)
+        os.mkdir(dst_path)
+
+        for simulation_name, simulation_obj in self.simulations.items():
+            simulation_path = os.path.join(dst_path, simulation_name)
+            simulation_obj.archive(dst_path=simulation_path)
 
     def configure(self, configuration: Pymatmc2Configuration):
         """ configure class from a Pymatmc2Configuration

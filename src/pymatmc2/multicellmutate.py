@@ -60,7 +60,7 @@ class MultiCellMutateAlgorithm(ABC):
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
-        temperature, float
+        temperature: float
     ) -> Tuple[bool, MultiCell]:
         raise NotImplementedError
 

@@ -16,8 +16,10 @@ __date__ = "2020/02/22"
 import os
 import shutil
 import random
+from typing import Dict, Tuple, List
 from copy import deepcopy
 from collections import OrderedDict
+from numpy import linalg
 
 from mexm.io.vasp import Poscar
 from mexm.simulation import VaspSimulation
@@ -92,7 +94,7 @@ class MultiCellMonteCarlo():
             path = configuration_path
         )
 
-        self.create_simulation_directory(
+        self.create_simulations_directory(
             path = self.simulations_path,
             is_restart = self.is_restart
         )
@@ -106,8 +108,16 @@ class MultiCellMonteCarlo():
         # assert isinstance(self.results, Pymatmc2Results)
         assert isinstance(self.logfile, Pymatmc2Log)
         assert os.path.isdir(self.simulations_path)
-    
- 
+
+    @property
+    def phase_space_name(self) -> str:
+        name = self.get_phase_space_name(
+            temperature = self.configuration.temperature,
+            pressure = self.configuration.pressure
+        )
+
+        return name
+
     def start_logging(self, path: str, is_restart: bool):
         """
 
@@ -120,7 +130,6 @@ class MultiCellMonteCarlo():
         self.logfile = Pymatmc2Log(
             path=os.path.abspath(path)
         )
-
 
     def start_configuration(
         self,
@@ -138,59 +147,44 @@ class MultiCellMonteCarlo():
                 self.log('loaded configuration file')
 
             except FileNotFoundError:
-                msg = 'cannot find configuration_path: {}'.format(
-                    path
-                )
+                msg = 'cannot find configuration_path: {}'
+                msg = msg.format(path)
                 raise
         else:
             msg = "path must be a string"
             self.log(msg)
             raise TypeError(msg)
 
-    def get_simulation_path(self):
-
-        assert isinstance(self.configuration.temperature, float)
-        assert isinstance(self.configuration.pressure, float)
-        temperature = int(self.configuration.temperature)
-        pressure = int(self.configuration.pressure)
-
-        assert isinstance(temperature, int)
-        assert isinstance(pressure, int)
-        simulation_path_fmt = '{}K_{}GPa'
-        simulation_path = simulation_path_fmt.format(temperature, pressure)
-
-        return simulation_path
-
-    def create_simulation_directory(
+    def create_simulations_directory(
         self,
         path: str,
         is_restart: bool 
-    ):        
+    ):
+        self.simulations_path = path
         # delete simulation directory on new simulation
         if is_restart:
             pass
         else:
             # remove the existing simulations directory if it exists
             if not os.path.isdir(path):
-                self.log(
-                    'create simulations directory: {}'.format(path)
-                )
+                msg = 'create_simulations directory: {}'
+                msg = msg.format(self.simulations_path)
+                self.log(msg)
                 os.mkdir(path)
             
-            simulation_path = os.path.join(
+            simulation_phasespace_path = os.path.join(
                 self.simulations_path,
-                self.get_simulation_path()
+                self.phase_space_name
             )
 
-            if os.path.isdir(simulation_path):
-                msg = 'removing existing simulation directory: {}'.format(
-                    self.get_simulation_path()
-                ) 
+            if os.path.isdir(simulation_phasespace_path):
+                msg = 'removing existing phasespace directory: {}'
+                msg = msg.format(simulation_phasespace_path)
                 self.log(msg)
-                shutil.rmtree(simulation_path)
-            
-            # create new simulation directory
-            os.mkdir(simulation_path)
+                shutil.rmtree(simulation_phasespace_path)
+            msg = 'create phasespace directory: {}'
+            msg = msg.format(simulation_phasespace_path)
+            os.mkdir(simulation_phasespace_path)
 
     def create_results_directory(self, 
         path: str, 
@@ -205,37 +199,27 @@ class MultiCellMonteCarlo():
                 self.log(msg)
                 os.mkdir(path)
  
-            results_path = os.path.join(
+            results_phasespace_path = os.path.join(
                 self.results_path,
-                self.get_results_path()
+                self.phase_space_name
             )
 
-            if os.path.isdir(results_path):
-                msg = 'removing existing results directory: {}'.format(
-                    self.get_results_path()
-                )
+            if os.path.isdir(results_phasespace_path):
+                msg = 'removing existing results directory: {}'
+                msg = msg.format(results_phasespace_path)
                 self.log(msg)
-                shutil.rmtree(results_path)
-
-            os.mkdir(results_path)
-
-    def get_results_path(self) -> str:
-        assert isinstance(self.configuration.temperature, float)
-        assert isinstance(self.configuration.pressure, float)
-        temperature = int(self.configuration.temperature)
-        pressure = int(self.configuration.pressure)
-
-        assert isinstance(temperature, int)
-        assert isinstance(pressure, int)
-        results_path_fmt = '{}K_{}GPa'
-        results_path = results_path_fmt.format(temperature, pressure)
-
-        return results_path
+                shutil.rmtree(results_phasespace_path)
+            os.mkdir(results_phasespace_path)
 
     def log(self, message: str):
         self.logfile.log(message = message)
     
-    def run(self):
+    def run(self) -> bool:
+        """
+
+        Returns:
+            bool: True if the max iteration condition has been met
+        """
         is_max_iterations = False
         if not self.is_restart:
             self.run_iteration(i_iteration=0)
@@ -254,127 +238,10 @@ class MultiCellMonteCarlo():
                     self.log('maximum iterations reached')
                     is_max_iterations = True
                 
-                elif i_iteration == 0:
-                    self.process_iteration(i_iteration=i_iteration)
-
+                elif i_iteration >= 0:
                     next_iteration = i_iteration + 1
-                    self.log('starting interation {}'.format(next_iteration))
-                                              
-                    # create new simulations
-                    multicell_path = os.path.join(
-                        self.simulations_path,
-                        self.get_simulation_path(),
-                        '{:05}'.format(next_iteration)
-                    )
-                    msg = "new simuluation path: {}"
-                    msg = msg.format(multicell_path)
-                    self.log(msg)
-
-                    mutator = MultiCellMutateAlgorithmFactory()
-                    mutator.configure(configuration=self.configuration)
-                    mutate_type = mutator.determine_mutate_algorithm()
-                    multicell = mutator.mutate_cells(multicell0)
-                    multicell.write(path=multicell_path)
-
-                    with open(
-                        os.path.join(multicell_path, 'mutate_type'),
-                        'w'
-                    ) as f:
-                        f.write(mutate_type)
-
-                    self.create_submission_scripts(i_iteration=next_iteration)
-                    self.submit_jobs(i_iteration=next_iteration)
-
-
-                elif i_iteration > 0:
                     self.process_iteration(i_iteration=i_iteration)
-                    next_iteration = i_iteration + 1
-
-                    # get initial cell
-                    multicell0_path = os.path.join(
-                        self.results_path,
-                        self.get_simulation_path(),
-                        '{:05}'.format(i_iteration-1)
-                    )
-
-                    # get candidate cell
-                    multicell1_path = os.path.join(
-                        self.simulations_path,
-                        self.get_simulation_path(),
-                        '{:05}'.format(i_iteration)
-                    )
-                  
-                    multicell0 = MultiCell()
-                    multicell0.configuration = self.configuration
-                    multicell0.read(path=multicell0_path)
-
-                    multicell1 = MultiCell()
-                    multicell1.configuration = self.configuration
-                    multicell1.read(path=multicell1_path)
-
-                    # get mutate type
-                    mutate_file_path = os.path.join(multicell1_path, 'mutate_type')
-                    with open(mutate_file_path) as f:
-                        mutate_type = f.read()
-                    mutate_type = mutate_type.strip()
-
-                    assert isinstance(multicell0, MultiCell)
-                    assert isinstance(multicell1, MultiCell)
-                    assert isinstance(self.configuration.temperature, float)
-                    assert isinstance(mutate_type, str)
-
-                    mutator = MultiCellMutateAlgorithmFactory()
-                    mutator.configure(configuration=self.configuration)
-                    is_accept, multicell_accept = mutator.accept_or_reject(
-                        multicell_initial=multicell0,
-                        multicell_candidate=multicell1,
-                        temperature=self.configuration.temperature,
-                        mutate_type=mutate_type
-                    )
-
-                    archive_path = os.path.join(
-                        self.results_path,
-                        self.get_simulation_path(),
-                        '{:05}'.format(i_iteration)
-                    )
-                    if is_accept:
-                        src_path = multicell0_path
-                    else:
-                        src_path = multicell1_path
-
-                    shutil.copytree(
-                        src=src_path,
-                        dst=archive_path
-                    )
-
-                    mutate_type_path = os.path.join(archive_path, 'mutate_type')
-                    with open(mutate_type_path, 'w') as f:
-                        f.write(mutate_type)
-
-                    is_accept_path = os.path.join(archive_path, 'is_accept')
-                    with open(is_accept_path, 'w') as f:
-                        f.write(str(is_accept))
-
-                    self.log('starting iteration {}'.format(next_iteration))
-                    mutator = MultiCellMutateAlgorithmFactory()
-                    mutator.configure(configuration=self.configuration)
-                    multicell_path = os.path.join(
-                        self.simulations_path,
-                        self.get_simulation_path(),
-                        '{:05}'.format(next_iteration)
-                    )                    
-                    mutate_type = mutator.determine_mutate_algorithm()
-                    multicell_candidate = mutator.mutate_cells(multicell_accept)
-                    multicell_candidate.write(path=multicell_path)
-
-                    with open(
-                        os.path.join(multicell_path, 'mutate_type'),
-                        'w'
-                    ) as f:
-                        f.write(mutate_type)
-
-                    self.create_submission_scripts(i_iteration=next_iteration)
-                    self.submit_jobs(i_iteration=next_iteration)
+                    self.run_iteration(i_iteration=next_iteration)
 
                 else:
                     msg = "how are we at iteration {}".format(i_iteration)
@@ -383,63 +250,181 @@ class MultiCellMonteCarlo():
         return is_max_iterations
     
     def run_iteration(self, i_iteration: int):
-        if i_iteration  == 0:
-            self.log('starting iteration 0')
-            self.create_iteration0_simulations()
-            self.create_submission_scripts(i_iteration=i_iteration)
-            self.submit_jobs(i_iteration=i_iteration)
+        msg = 'starting iteration {}'.format(i_iteration)
+        self.log(msg)
+        self.create_simulations(i_iteration=i_iteration)
+        self.create_submission_scripts(i_iteration=i_iteration)
+        self.submit_jobs(i_iteration=i_iteration)
     
     def process_iteration(self, i_iteration: int):
+        src_mc_initial_path = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration-1),
+            'final'
+        )
+        src_mc_candidate_path = os.path.join(
+            self.simulations_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration)
+        )
+        src_mutate_type = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration),
+            'mutate_type'
+        )
+        dst_path = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration)
+        )
+        dst_mc_initial_path = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration),
+            'initial'
+        )
+        dst_mc_candidate_path = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration),
+            'candidates'
+        )
+        dst_mc_final_path = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration),
+            'final'
+        )
+        dst_is_accepted = os.path.join(
+            self.results_path,
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration),
+            'is_accepted'
+        )
+
         if i_iteration == 0:
             # no initial_mc
-            # candidate_mc
-            candidate_path = os.path.join(
-                self.simulations_path,
-                self.get_simulation_path(),
-                '{:05}'.format(i_iteration)
-            )
-            candidate_archive_path = os.path.join(
-                self.results_path,
-                self.get_results_path(),
-                '{:05}'.format(i_iteration),
-                'candidate'
-            )
-            candidate_mc = MultiCell()
-            candidate_mc.configuration = self.configuration
-            candidate_mc.read(path=candidate_path)           
+            mc_candidate = MultiCell()
+            mc_candidate.configuration = self.configuration
+            mc_candidate.read(path=src_mc_candidate_path)
+
+            #no accept or reject
+            mc_final = mc_candidate
+
+            if not os.path.isdir(dst_path):
+                os.mkdir(dst_path)
+            mc_final.archive(dst_path = dst_mc_final_path)
         else:
-            pass
+            mc_initial = MultiCell()
+            mc_initial.configuration = self.configuration
+            mc_initial.read(path=src_mc_initial_path)
 
-    def create_iteration0_simulations(self):
-        multicell = MultiCell.initialize_from_pymatmc2_configuration(
-            configuration = self.configuration
-        )
+            mc_candidate = MultiCell()
+            mc_candidate.configuration = self.configuration
+            mc_candidate.read(path=src_mc_candidate_path)
 
-        iteration_path = os.path.join(
-            self.simulations_path,
-            self.get_simulation_path(),
-            '00000'
-        )
+            with open(src_mutate_type, 'r') as f:
+                mutate_type = f.read()
+            
+            mutator = MultiCellMutateAlgorithmFactory.factories[mutate_type]()
+            is_accept, mc_final = mutator.accept_or_reject(
+                multicell_initial = mc_initial,
+                multicell_candidate = mc_candidate,
+                temperature = self.configuration.temperature
+            )
 
-        if os.path.isdir(iteration_path):
-            shutil.rmtree(iteration_path)
-        os.mkdir(iteration_path)
+            mc_initial.archive(dst_path=dst_mc_initial_path)
+            mc_candidate.archive(dst_path=dst_mc_candidate_path)
+            mc_final.archive(dst_path=dst_mc_final_path)
+            with open(dst_is_accepted, 'w') as f:
+                f.write(is_accept)
 
-        multicell.write(iteration_path)
+    def create_simulations(self, i_iteration:int):
+        if i_iteration == 0:
+            multicell = MultiCell.initialize_from_configuration(
+                self.configuration
+            )
+                
+            dst_path = os.path.join(
+                self.simulations_path, 
+                self.phase_space_name, 
+                self.get_iteration_string(i_iteration)
+            )
 
+            try:
+                multicell.phase_molar_fraction
+                multicell.write(path = dst_path)
+            except linalg.LinAlgError:
+                from pymatmc2.multicellmutate import IntraphaseFlip
+                mutator = IntraphaseFlip()
+                multicell_new = mutator.mutate_multicell(multicell = multicell)
+                multicell_new.write(path = dst_path)
+
+                results_path = os.path.join(
+                    self.results_path,
+                    self.phase_space_name,
+                    self.get_iteration_string(i_iteration)
+                )
+                os.mkdir(results_path)
+
+                mutate_type_path = os.path.join(results_path, 'mutate_type')
+                with open(mutate_type_path,'w') as f:
+                    f.write(IntraphaseFlip.mutate_type)
+
+        else:
+            src_path = os.path.join(
+                self.results_path,
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration-1),
+                'final'
+            )
+
+            dst_path = os.path.join(
+                self.simulations_path,
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration)
+            )
+
+            # read initial multicell
+            mc_initial = MultiCell()
+            mc_initial.configuration = self.configuration
+            mc_initial.read(path=src_path)
+
+            # create candidate multicell         
+            mutator = MultiCellMutateAlgorithmFactory()
+            mutator.configure(configuration=self.configuration)
+            mutate_type, mc_candidate = mutator.mutate_cells(mc_initial)
+            mc_candidate.write(path=dst_path)
+
+            results_path = os.path.join(
+                self.results_path,
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration)
+            )
+            os.mkdir(results_path)
+
+            mutate_type_path = os.path.join(results_path, 'mutate_type')
+            with open(mutate_type_path,'w') as f:
+                f.write(mutate_type)
+
+    
     def create_submission_scripts(self, i_iteration: int):
 
         for k in self.configuration.simulation_cells:
             simulation_name = '{:05}_{}'.format(i_iteration, k)
 
-            configuration_ = self.configuration.configuration
-            hpc_type = configuration_['hpc_manager']['type']
-            script_kwargs = deepcopy(configuration_['hpc_manager']['configuration'])
+            hpc_type = self.configuration.hpc_manager['type']
+            script_kwargs = deepcopy(
+                self.configuration.hpc_manager['configuration']
+            )
             script_kwargs['jobname'] = simulation_name
+
             script_path = os.path.join(
                 self.simulations_path,
-                self.get_simulation_path(),
-                '{:05}'.format(i_iteration),
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration),
                 k,
                 'runjob.sh'
             )
@@ -450,14 +435,14 @@ class MultiCellMonteCarlo():
             )
 
     def submit_jobs(self, i_iteration: int):
-        configuration_ = self.configuration.configuration
-        hpc_type = configuration_['hpc_manager']['type']
+        
+        hpc_type = self.configuration.hpc_manager['type']
         for k in self.configuration.simulation_cells:
 
             simulation_path = os.path.join(
                 self.simulations_path,
-                self.get_simulation_path(),
-                '{:05}'.format(i_iteration),
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration),
                 k
             )
 
@@ -467,52 +452,58 @@ class MultiCellMonteCarlo():
                 submission_script_path='runjob.sh'
             )
 
-    def determine_current_iteration(self) -> int:
+
+    def determine_current_iteration(self) -> Tuple[int, str]:
         i_iteration = 0
         status = None
 
-        while True:
+        # determining the max iteration
+        iteration_paths = os.listdir(
+            path=os.path.join(
+                self.simulations_path,
+                self.phase_space_name
+            )
+        )
+        i_iteration = max([int(k) for k in iteration_paths])
 
-            cell_names = []
-            for k in self.configuration.simulation_cells:
-                cell_names.append(k)
-                
-            simulation_paths = []
-            for k in cell_names:
-                path = os.path.join(
-                    self.simulations_path,
-                    self.get_simulation_path(),
-                    '{:05}'.format(i_iteration),
-                    k                    
-                )
-                simulation_paths.append(path)
-
-            simulations_created_array = []
-            for k in simulation_paths:
-                simulations_created_array.append(
-                    os.path.isdir(k)
-                )
-
-            if not all(simulations_created_array):
-                i_iteration -= 1
-                break
-            else:
-                job_complete_array = []
-                for k in simulation_paths:
-                    job_complete_array.append(
-                        os.path.isfile(
-                            os.path.join(k,'jobComplete')
-                        )
-                    )
-                
-                if all(job_complete_array):
-                    status = 'complete'
-                else:
-                    status = 'running'
-                    break
-            i_iteration += 1
+        # determing is the jobs are complete
+        jobs_completed_array = []
+        for cell_name in self.configuration.cell_names:
+            job_complete_path = os.path.join(
+                self.simulations_path,
+                self.phase_space_name,
+                self.get_iteration_string(i_iteration),
+                cell_name,
+                'jobComplete'
+            )
+            jobs_completed_array.append(os.path.isfile(job_complete_path))
+        if all(jobs_completed_array):
+            status = 'complete'
+        else:
+            status= 'running'
 
         return i_iteration, status
+
+    def get_phase_space_name(self, 
+        temperature: float, 
+        pressure: float
+    ) -> str:
+
+        T = int(temperature)
+        P = int(pressure)
+
+        fmt = '{}K_{}GPa'
+        return fmt.format(T, P)
+
+    def get_iteration_string(self, i: int) -> str:
+        """
+        Arguments:
+            i (int): number of the iteration of interest
+        Returns:
+            (str): formatted iteration string
+        """
+        fmt = '{:05}'
+        return fmt.format(i)
 
 if __name__ == "__main__":
     mc2 = MultiCellMonteCarlo(is_restart=False)

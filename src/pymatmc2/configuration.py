@@ -115,7 +115,10 @@ class Pymatmc2Configuration():
 
         return concentration
 
-
+    @property
+    def hpc_manager(self) -> dict:
+        return self.configuration['hpc_manager']
+        
     # deprecate
     @property
     def molar_fraction_total(self) -> Dict[str, float]:
