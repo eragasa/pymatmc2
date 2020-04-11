@@ -1,7 +1,9 @@
+from copy import deepcopy
 from abc import ABC, abstractmethod
 import warnings
-from typing import Tuple
+from typing import Tuple, List, Dict
 import numpy as np
+import numpy.linalg as linalg
 
 # imports from Materials Ex Machina
 from mexm.structure import SimulationCell
@@ -191,33 +193,54 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
 class IntraphaseFlip(MultiCellMutateAlgorithm):
     mutate_type = 'intraphase_flip'
 
-    def mutate_multicell(
-        self,
-        multicell: MultiCell
-    ) -> MultiCell:
+    def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
+        """ create a new candidate multicell
+
+        Arguments:
+            multicell (MultiCell): the initial multicell from which to get a    candidate
+        """
 
         rtn_multicell = MultiCell.initialize_from_obj(multicell=multicell)
-        for phase in multicell.simulations:
-            simulation = multicell.simulations[phase]
+        while True:
+            try:
+                for phase in multicell.simulations:
+                    simulation = multicell.simulations[phase]
 
-            if isinstance(simulation, VaspSimulation):
-                cell = SimulationCell.initialize_from_object(
-                obj = simulation.contcar
-            )
+                    # extract the structure file
+                    if isinstance(simulation, VaspSimulation):
+                        if isinstance(simulation.contcar, Poscar):
+                            cell = deepcopy(simulation.contcar)
+                        else:
+                            cell = deepcopy(simulation.poscar)
+                    else:
+                        raise ValueError('unknown simulation type')
+                    assert isinstance(cell, SimulationCell)
 
-            idx_atoms = list(range(cell.n_atoms))
-            idx_atom = np.random.choice(idx_atoms, 1)[0]
-
-            old_symbol = cell.atomic_basis[idx_atom].symbol
-            symbols = cell.symbols
-            symbols.remove(old_symbol)
-            new_symbol = np.random.choice(symbols, 1)[0]
-
-            cell.atomic_basis[idx_atom].symbol = new_symbol
-        
-            if isinstance(simulation, VaspSimulation):
-                 rtn_multicell.simulations[phase].poscar \
-                    = Poscar.initialize_from_object(obj=cell)
+                    # mutate the cell
+                    # select atom at random
+                    idx_atoms = list(range(cell.n_atoms))
+                    idx_atom = np.random.choice(idx_atoms, 1)[0]
+                    old_symbol = cell.atomic_basis[idx_atom].symbol
+                    
+                    # flip the symbol
+                    symbols = cell.symbols
+                    symbols.remove(old_symbol)
+                    new_symbol = np.random.choice(symbols, 1)[0]
+                    
+                    # assign new symbol
+                    cell.atomic_basis[idx_atom].symbol = new_symbol
+                
+                    if isinstance(simulation, VaspSimulation):
+                        rtn_multicell.simulations[phase].poscar \
+                            = Poscar.initialize_from_object(obj=cell)
+                    else:
+                        raise ValueError("unknown simulation type")
+                    
+                # this will raise a LinAlg error if rank deficient
+                rtn_multicell.phase_molar_fraction
+                break
+            except linalg.LinAlgError:
+                pass
                
         return rtn_multicell
 
@@ -276,34 +299,51 @@ class MultiCellMutateAlgorithmFactory(ABC):
         'intraphase_flip': IntraphaseFlip
     }
 
+    """
+    Attributes:
+        configuration (Pymatmc2Configuration)
+    """
     def __init__(self):
         self.configuration = None
-        self.mutation_types = None
-        self.mutation_weights = None
-        self.cumulative_weights = None
+
+    @property
+    def mutation_types(self) -> List[str]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+        mutation_types = []
+        for k in self.configuration.mutation_weights.keys():
+            mutation_types.append(k)
+        return mutation_types
+
+    @property
+    def mutation_weights(self) -> List[float]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+        mutation_weights = []
+        for v in self.configuration.mutation_weights.values():
+            mutation_weights.append(v)
+        return mutation_weights
+
+    @property
+    def cumulative_weights(self) -> List[float]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+        mutation_weights = self.mutation_weights
+        cumulative_weights = []
+        for k in range(len(self.mutation_weights)):
+            cum_w = sum(mutation_weights[:k+1]) 
+            cumulative_weights.append(cum_w)
+        return cumulative_weights
+
+    @property
+    def cell_names(self) -> List[str]:
+        return self.configuration.cell_names
 
     def configure(self, configuration: Pymatmc2Configuration):
         self.configuration = configuration
-        self.mutation_types = []
-        self.mutation_weights = []
-        for k, v in configuration.mutation_weights.items():
-            self.mutation_types.append(k)
-            self.mutation_weights.append(v)
-        
-        self.cumulative_weights = []
-        for k in range(len(self.mutation_weights)):
-            self.cumulative_weights.append(
-                sum(self.mutation_weights[:k+1])
-            )
 
-        self.cell_names = self.configuration.cell_names
-
-    def read_simulations(self, i_iteration):
+    def read_simulations(self, i_iteration:int):
         self.multicell_initial = MultiCell()
         self.multicell_initial.configuration = self.configuration
         self.multicell_candidate = MultiCell()
-        self.multicell_candidate.conditation = self.configuration
-        
+        self.multicell_candidate.configuration = self.configuration
 
     def accept_or_reject(
         self, 
@@ -334,10 +374,17 @@ class MultiCellMutateAlgorithmFactory(ABC):
 
         return is_accept, multicell
 
-    def mutate_cells(self, multicell: MultiCell) -> MultiCell:
+    def mutate_cells(self, multicell: MultiCell) -> Tuple[str, MultiCell]:
+        
         self.mutate_type = self.determine_mutate_algorithm()
+        
         mutator = self.factories[self.mutate_type]()
-        return mutator.mutate_multicell(multicell = multicell)
+
+        self.multicell_initial = multicell
+        self.multicell_candidate = mutator.mutate_multicell(multicell = multicell)
+
+
+        return self.mutate_type, mutator.mutate_multicell(multicell = multicell)
 
     def determine_mutate_algorithm(self):
         probability = np.random.random()

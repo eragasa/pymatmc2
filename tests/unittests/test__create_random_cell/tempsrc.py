@@ -15,10 +15,10 @@ def get_bcc_cell(r: float) -> SimulationCell:
     simulation_cell.add_atom('Ni',[0.5, 0.5, 0.5])
     return simulation_cell
 
-def get_fcc_cell(r: float):
+def get_fcc_cell(r: float) -> SimulationCell:
     #TODO:
     
-    a0 = 4 / math.sqrt(2) * r
+    a0 = math.sqrt(8) * r
     simulation_cell = SimulationCell()
     simulation_cell.a0 = a0
     simulation_cell.add_atom('Ni',[0.0, 0.0, 0.0])

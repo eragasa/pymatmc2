@@ -58,4 +58,4 @@ def dev__create_random_cell__bcc():
 
 if __name__ == "__main__":
     dev__create_random_cell__fcc()
-    dev__create_random_cell__bcc()
+    # dev__create_random_cell__bcc()

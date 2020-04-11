@@ -27,7 +27,7 @@ configuration['job_submission'] = {
 }
 
 configuration['atomic_configuration'] = {
-    'molar_fraction_total':{'Au':24, 'Pt':8},
+    'molar_fraction_total':{'Au':0.50, 'Pt':0.50},
     'simulation_cells':{
         'fcc1':{
             'incar':os.path.join(

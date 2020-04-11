@@ -28,59 +28,6 @@ class MultiCell:
         self._molar_fraction_total = None
         self.simulations = None
 
-    @property
-    def molar_fraction_total(self) -> Dict[str, float]:
-        assert isinstance(self.configuration, Pymatmc2Configuration)
-
-        molar_fraction_total = self.configuration.molar_fraction_total
-        molar_fraction_total = OrderedDict()
-
-        sum_molar_fraction_total = sum(self.configuration.molar_fraction_total.values())
-        for k, v in self.configuration.molar_fraction_total.items():
-            molar_fraction_total[k] = v/sum_molar_fraction_total
-
-        return molar_fraction_total
-
-    def get_simulation_paths(self, path):
-        return [os.path.join(path, k) for k in self.simulations]
-
-    def read(self, path: str):
-        """ read simulations from disk
-
-        Arguments:
-            path (str)
-        """
-
-        assert os.path.isdir(path)
-        self.simulations = OrderedDict()
-        
-        for cell_name in self.configuration.simulation_cells:
-            if self.configuration.calculator_type == 'vasp':
-                self.simulations[cell_name] = VaspSimulation()
-                self.simulations[cell_name].read(
-                    os.path.join(path, cell_name)
-                )
-
-
-    def write(self, path: str):
-        """ write simulations to disk
-
-        Writes out the simulations to path.  Currently only tested with VASP simulations, but
-        should work with any subclass of the mexm.simulation.Simulation.
-
-        Arguments:
-            path (str): the path of the directory which to write the simulations
-        """
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        
-        os.mkdir(path)
-        for simulation_name, simulation_obj in self.simulations.items():
-            simulation_path = os.path.join(path, simulation_name)
-            os.mkdir(simulation_path)
-            simulation_obj.write(simulation_path=simulation_path)
-
-
     @staticmethod
     def initialize_from_obj(multicell):
         """
@@ -137,6 +84,96 @@ class MultiCell:
 
         return m * sum_U
 
+    @property
+    def concentration(self) -> Dict[str, float]:
+
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+
+        sum_concentration = sum(self.configuration.concentration.values())
+        
+        concentration = OrderedDict()
+        for s in self.symbols:
+            concentration_symbol =  self.configuration.concentration[s]
+            concentration[s] = concentration_symbol/sum_concentration
+
+        return concentration
+    
+    @property
+    def cell_concentration(self) -> Dict[str, float]:
+
+        cell_concentration = OrderedDict()
+        for c in self.cell_names:
+            cell_concentration[c] = OrderedDict()
+
+        for c in self.cell_names:
+            for s in self.symbols:
+                n_atoms_symbol = self.cells[c].get_number_of_atoms(s)
+                n_atoms_total = self.cells[c].get_number_of_atoms()
+                cell_concentration[c][s] = n_atoms_symbol/n_atoms_total
+
+        return cell_concentration
+    
+    @property
+    def cell_concentration_matrix(self) -> np.ndarray:
+
+        X = []
+        for c in self.cell_names:
+            X.append(list(self.cell_concentration[c].values()))
+
+        return np.array(X)
+
+    @property
+    def molar_fraction_total(self) -> Dict[str, float]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+
+        molar_fraction_total = self.configuration.molar_fraction_total
+        molar_fraction_total = OrderedDict()
+
+        sum_molar_fraction_total = sum(self.configuration.molar_fraction_total.values())
+        for k, v in self.configuration.molar_fraction_total.items():
+            molar_fraction_total[k] = v/sum_molar_fraction_total
+
+        return molar_fraction_total
+
+
+
+    def get_simulation_paths(self, path):
+        return [os.path.join(path, k) for k in self.simulations]
+
+    def read(self, path: str):
+        """ read simulations from disk
+
+        Arguments:
+            path (str)
+        """
+
+        assert os.path.isdir(path)
+        self.simulations = OrderedDict()
+        
+        for cell_name in self.configuration.simulation_cells:
+            if self.configuration.calculator_type == 'vasp':
+                vasp_simulation_path = os.path.join(path, cell_name)
+                self.simulations[cell_name] = VaspSimulation()
+                self.simulations[cell_name].read(vasp_simulation_path)
+
+
+    def write(self, path: str):
+        """ write simulations to disk
+
+        Writes out the simulations to path.  Currently only tested with VASP simulations, but
+        should work with any subclass of the mexm.simulation.Simulation.
+
+        Arguments:
+            path (str): the path of the directory which to write the simulations
+        """
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        
+        os.mkdir(path)
+        for simulation_name, simulation_obj in self.simulations.items():
+            simulation_path = os.path.join(path, simulation_name)
+            os.mkdir(simulation_path)
+            simulation_obj.write(simulation_path=simulation_path)
 
     def configure(self, configuration: Pymatmc2Configuration):
         """ configure class from a Pymatmc2Configuration

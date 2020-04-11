@@ -15,7 +15,10 @@ __date__ = "2020/02/22"
 import os
 import copy
 import yaml
+import tarfile
+
 from mexm.io.filesystem import OrderedDictYAMLLoader
+from pymatmc2 import Pymatmc2Configuration
 
 class Pymatmc2Results():
     """
@@ -24,38 +27,67 @@ class Pymatmc2Results():
         results (dict): 
     """
 
-    def __init__(self):
-        self._path = None
-        self.results = None
+    def __init__(self,
+        configuration: Pymatmc2Configuration,
+        results_path='pymatmc2.results', 
+        tarball_path='pymatmc2.tar'
+    ):
+        assert isinstance(results_path, str)
+        assert isinstance(tarball_path, str)
 
-    @property
-    def path(self):
-        """(str): absolute path of the results file"""
-        
-        return self._path
+        self.configuration = configuration
+        self.results_path = results_path
+        self.tarball_path = tarball_path
 
-    @path.setter
-    def path(self, path):
-
-        # convert to absolute
-        if isinstance(path, str):
-            if os.path.isabs(path):
-                self._path = path
-            else:
-                self._path = os.path.abspath(path)
+    def archive_multicell(self, i_iteration: int, path: str, mc_type: str):
+        if os.path.exists(self.tarball_path):
+            tf = tarfile.open(self.tarball_path, mode='a')
         else:
-            msg = "path must be a string"
-            raise TypeError(msg)
+            tf = tarfile.open(self.tarball_path, mode='w')
 
+        if self.configuration.calculator_type == 'vasp':
+            archived_files = [
+                'POSCAR', 'INCAR', 'KPOINTS', 'OUTCAR', 'OSZICAR', 'CONTCAR'
+            ]
 
-    def read(self, path: str):
-        """ read the results file
+            for cell_name in self.configuration.cell_names:
+                for f in archived_files:
+                    src_path = os.path.join(path, f)
+                    dst_path = os.path.join(
+                        '{:05}'.format(i_iteration),
+                        cell_name,
+                        mc_type,
+                        f
+                    )        
+                    tf.addfile(
+                        tarfile.TarInfo(dst_path),
+                        src_path
+                    )
+        tf.close()
 
-        Arguments:
-            path (str): path to the results file
-        """
-        self.path
-        raise NotImplementedError
+    def get_multicell(self, i_iteration: int):
+        pass
 
-    def write(self):
-        raise NotImplementedError
+    def archive_initial_multicell(self, i_iteration: int, path: str):
+        kwargs = {
+            'i_iteration':i_iteration,
+            'path':path,
+            'mc_type':'initial'
+        }
+        self.archive_multicell(**kwargs)
+    
+    def archive_candidate_multicell(self, i_iteration: int, path: str):
+        kwargs = {
+            'i_iteration':i_iteration,
+            'path':path,
+            'mc_type':'candidate'
+        }
+        self.archive_multicell(**kwargs)
+
+    def archive_final_multicell(self, i_iteration: int, path: str):
+        kwargs = {
+            'i_iteration':i_iteration,
+            'path':path,
+            'mc_type':'final'
+        }
+        self.archive_multicell(**kwargs)

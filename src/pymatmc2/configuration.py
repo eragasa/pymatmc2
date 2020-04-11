@@ -1,3 +1,19 @@
+# coding: utf-8
+# Copyright (c) Eugene J. Ragasa
+# Distributed under the terms of the MIT License
+
+""" configuration class for pymatmc2
+
+This module implmements an class for convenient access to configure
+the pymatmc2 classes
+"""
+
+__author__ = "Eugene J. Ragasa"
+__email__ = "ragasa.2@osu.edu"
+__copyright__ = "Copyright 2020, Eugene J. Ragasa"
+__maintainer__ = "Eugene J. Ragasa"
+__date__ = "2020/02/22"
+
 import os
 import copy
 import yaml
@@ -70,6 +86,7 @@ class Pymatmc2Configuration():
     
     @property
     def cell_names(self) -> List[str]:
+        """:List(str) names of the cells"""
         cell_names = [k for k in self.simulation_cells] 
         return cell_names
 
@@ -84,8 +101,36 @@ class Pymatmc2Configuration():
         return self.configuration['environment_variables']['pressure']
 
     @property
-    def molar_fraction_total(self) -> List[float]:
-        return self.configuration['atomic_configuration']['molar_fraction_total']
+    def concentration(self) -> Dict[str, float]:
+
+        # make local copy of the composition
+        concentration = OrderedDict()
+        for k, v in self.configuration['atomic_configuration']['molar_fraction_total'].items():
+            concentration[k] = v
+
+        # sum of composition, should be equal to one.  force normalization.
+        sum_concentration = sum(concentration.values())
+        for k, v in concentration.items():
+            concentration[k] = v/sum_concentration
+
+        return concentration
+
+
+    # deprecate
+    @property
+    def molar_fraction_total(self) -> Dict[str, float]:
+        
+        # make local copy of the composition
+        composition = OrderedDict()
+        for k, v in self.configuration['atomic_configuration']['molar_fraction_total'].items():
+            composition[k] = v
+
+        # sum of composition, should be equal to one.  force normalization.
+        sum_composition = sum(composition.values())
+        for k, v in composition.items():
+            composition[k] = v/sum_composition
+
+        return composition
 
     @property
     def mutation_weights(self):

@@ -8,7 +8,12 @@ configuration = Pymatmc2Configuration()
 configuration.read(configuration_path)
 
 def dev__initialize():
+    print(80*'-')
+    print('MultiCellMutateAlgorithmFactory.__init__')
+    print(80*'-')
+    
     mcmutate = MultiCellMutateAlgorithmFactory()
+    mcmutate.configure(configuration=configuration)
     assert mcmutate.mutation_weights is None
     assert mcmutate.mutation_types is None
     assert mcmutate.cumulative_weights is None
