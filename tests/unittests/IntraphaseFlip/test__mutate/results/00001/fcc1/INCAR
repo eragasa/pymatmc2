@@ -1,0 +1,36 @@
+SYSTEM = AuPt
+#Start parameters:
+ISTART = 0
+ICHARG = 2
+#Electronic relaxation:
+NELM = 70
+EDIFF = 1e-5
+ALGO = Fast
+#Ionic relaxation:
+IBRION = 2
+NSW = 300
+EDIFFG= -1e-2
+ISIF = 3
+POTIM = 0.15
+#Precision control
+PREC = Accurate
+ENCUT = 300
+ISMEAR = 1
+SIGMA = 0.15
+LREAL = Auto
+ISYM = 1
+#NBANDS = 180
+#Acceleration
+NPAR = 4
+#NSIM = 8
+KPAR = 8
+#Writing control
+LWAVE = F
+LCHARG = F
+#LORBIT = 11
+#Other
+#ISPIN = 2
+#MAGMOM = 32*0.4
+#AMIN = 0.01
+#AMIX = 0.9933648
+#BMIX = 0.000005
