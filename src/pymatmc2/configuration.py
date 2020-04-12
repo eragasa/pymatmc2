@@ -147,6 +147,18 @@ class Pymatmc2Configuration():
     def max_iterations(self):
         return self.configuration['max_iterations']
 
+    @property
+    def results_path(self):
+        return self.configuration['results']['dir']
+
+    @property
+    def results_tar_path(self):
+        return self.configuration['results']['tar_path']
+
+    @property
+    def results_file_path(self):
+        return self.configuration['results']['file_path']
+
     def read(self, path):
         """ read the configuration files
 

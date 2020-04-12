@@ -4,29 +4,28 @@ import os
 import sys
 from crontab import CronTab
 
+# this might be taken care of with a pip install
 sys.path.append('/users/PAA0028/eragasa/repos/pymatmc2/src')
 sys.path.append('/users/PAA0028/eragasa/repos/mexm-base/src')
 os.environ['VASP_POTPAW_GGA'] = '/users/PAA0028/eragasa/usr/local/vasp/potpaw/potpaw_PBE.54'
  
 from pymatmc2 import MultiCellMonteCarlo
 
-PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(
-    __file__,
-    os.getcwd() 
-)
+PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(__file__, os.getcwd())
 PYMATMC2_STOP_CMD = "python {} --stop".format(os.path.abspath(__file__))
 PYMATMC2_CONTINUE_DESC = "pymatmc2_continue"
 
 @click.command()
 @click.option('--start', 'start_option', flag_value='start')
+@click.option('--restart', 'start_option', flag_value='restart')
 @click.option('--continue', 'start_option', flag_value='continue')
 @click.option('--stop', 'start_option', flag_value='stop')
 @click.option('--none', 'start_option', flag_value='none', default=True)
 @click.argument('path', default=os.getcwd())
-
 def main(start_option, path):
     start_options = {
         'start': pymatmc2_start,
+        'restart': pymatmc2_restart,
         'continue': pymatmc2_continue,
         'stop': pymatmc2_stop,
         'none': pymatmc2_none
@@ -44,11 +43,36 @@ def pymatmc2_start(path):
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     o_mc2.run()    
     
-    print('start')
     schedule_cron_job(
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
+
+def pymatmc2_restart(path):
+
+    os.chdir(path)
+    
+    kwargs_mc2 = {
+        'configuration_path':'pymatmc2.config',
+        'results_path':'results',
+        'logfile_path':'pymatmc2.log',
+        'simulations_path':'simulations',
+        'is_restart':True
+    }
+    o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
+    is_max_iterations = o_mc2.run()    
+
+    if is_max_iterations:
+        msg = 'is_max_iterations:{}'
+        msg = msg.format(is_max_iterations)
+        print(msg)
+        pymatmc2_stop(path=path)
+    else:
+        schedule_cron_job(
+	    command=PYMATMC2_CONTINUE_CMD,
+            description=PYMATMC2_CONTINUE_DESC
+        )
+        
 
 def pymatmc2_continue(path):
     os.chdir(path)
@@ -63,8 +87,10 @@ def pymatmc2_continue(path):
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     is_max_iterations = o_mc2.run()    
 
-    print('is_max_iterations:',is_max_iterations)
     if is_max_iterations:
+        msg = 'is_max_iterations:{}'
+        msg = msg.format(is_max_iterations)
+        print(msg)
         pymatmc2_stop(path=path)
 
 def pymatmc2_stop(path):
@@ -72,7 +98,6 @@ def pymatmc2_stop(path):
         command=PYMATMC2_CONTINUE_CMD,
         description=PYMATMC2_CONTINUE_DESC
     )
-    print('stop')
 
 def pymatmc2_none(path):
     msg = (

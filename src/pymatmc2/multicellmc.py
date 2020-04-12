@@ -228,7 +228,8 @@ class MultiCellMonteCarlo():
 
             assert isinstance(i_iteration, int)
             assert i_iteration >= 0
-            assert isinstance(status, bool)
+            assert isinstance(status, str)
+            assert status in ['running', 'complete']
 
             if status == 'running':
                 self.log('iteration {} is still runnning'.format(i_iteration))
@@ -339,7 +340,7 @@ class MultiCellMonteCarlo():
             mc_candidate.archive(dst_path=dst_mc_candidate_path)
             mc_final.archive(dst_path=dst_mc_final_path)
             with open(dst_is_accepted, 'w') as f:
-                f.write(is_accept)
+                f.write(str(is_accept))
 
     def create_simulations(self, i_iteration:int):
         if i_iteration == 0:
@@ -454,6 +455,13 @@ class MultiCellMonteCarlo():
 
 
     def determine_current_iteration(self) -> Tuple[int, str]:
+        """ return the currrent iteration and the status of the current iteration
+
+        Returns:
+            Tuple[int, str]:
+                int: the current iteration
+                str: status of the current iteration
+        """
         i_iteration = 0
         status = None
 
