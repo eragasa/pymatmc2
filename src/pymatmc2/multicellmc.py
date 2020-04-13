@@ -26,7 +26,6 @@ from mexm.simulation import VaspSimulation
 from mexm.job import JobSubmissionManagerFactory
 
 from pymatmc2 import MultiCell
-from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import Pymatmc2Results
@@ -38,6 +37,8 @@ from pymatmc2.utils import run_job
 from pymatmc2.utils import stop_check
 from pymatmc2.utils import prepare
 
+from pymatmc2.multicellmutate import IntraphaseFlip
+from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 # the results file needs to maintain state of the system
 
 
@@ -226,11 +227,6 @@ class MultiCellMonteCarlo():
         else:
             i_iteration, status = self.determine_current_iteration()
 
-            assert isinstance(i_iteration, int)
-            assert i_iteration >= 0
-            assert isinstance(status, str)
-            assert status in ['running', 'complete']
-
             if status == 'running':
                 self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
@@ -253,7 +249,11 @@ class MultiCellMonteCarlo():
     def run_iteration(self, i_iteration: int):
         msg = 'starting iteration {}'.format(i_iteration)
         self.log(msg)
+        msg = 'creating simulations...'
+        self.log(msg)
         self.create_simulations(i_iteration=i_iteration)
+        msg = 'submitting jobs...'
+        self.log(msg)
         self.create_submission_scripts(i_iteration=i_iteration)
         self.submit_jobs(i_iteration=i_iteration)
     
@@ -354,13 +354,22 @@ class MultiCellMonteCarlo():
                 self.get_iteration_string(i_iteration)
             )
 
+            msg = 'creating simulations in {}'.format(dst_path)
+            self.log(msg)
             try:
                 multicell.phase_molar_fraction
                 multicell.write(path = dst_path)
             except linalg.LinAlgError:
-                from pymatmc2.multicellmutate import IntraphaseFlip
+                msg = 'concentration matrix is not full rank'
+                self.log(msg)
+                msg = 'using intraphase_flip to fix concentration matrix'
+                self.log(msg)
+
                 mutator = IntraphaseFlip()
                 multicell_new = mutator.mutate_multicell(multicell = multicell)
+
+                msg = 'found valid multicell'
+                self.log(msg)
                 multicell_new.write(path = dst_path)
 
                 results_path = os.path.join(

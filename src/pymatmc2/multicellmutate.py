@@ -175,8 +175,11 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
         phases = [k for k in multicell_initial.simulations]
         is_accept_phase_array = []
         for phase in phases:
-            E0 = multicell_initial.simulations[phase].total_energy
-            E1 = multicell_candidate.simulations[phase].total_energy
+            n_atoms_0 = multicell_initial.simulations[phase].poscar.n_atoms
+            E0 = multicell_initial.simulations[phase].total_energy/n_atoms_0
+
+            n_atoms_1 = multicell_candidate.simulations[phase].poscar.n_atoms
+            E1 = multicell_candidate.simulations[phase].total_energy/n_atoms_1
             assert isinstance(E0, float)
             assert isinstance(E1, float)
             if E1 < E0:
@@ -198,7 +201,8 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
             else:
                 rtn_multicell.simulations[phase] \
                     = multicell_initial.simulations[phase]
-            is_accept_phase_array.append(is_accept_phase) 
+            is_accept_phase_array.append(is_accept_phase)
+            self.multicell_candidate = rtn_multicell 
         return any(is_accept_phase_array), rtn_multicell
 
 class InterphaseSwap(MultiCellMutateAlgorithm):
@@ -270,8 +274,17 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                     
                 # this will raise a LinAlg error if rank deficient
                 rtn_multicell.phase_molar_fraction
-                break
+
+                is_phase_fraction_good = []
+                for f in rtn_multicell.phase_molar_fraction.values():
+                    if f > 1 or f < 0:
+                        is_phase_fraction_good.append(False)    # passing forces a retry
+                    else:
+                        is_phase_fraction_good.append(True)
+                if any(is_phase_fraction_good):
+                    break
             except linalg.LinAlgError:
+                # passing forces a retry
                 pass
         
         self.multicell_candidate = rtn_multicell
@@ -285,14 +298,15 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
     ):
         kB = constants.BOLTZMANN
         T = temperature
-        
+        beta = 1/kB/T
+        n_phases = len(self.multicell_initial.cell_names) 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
-            p_accept = min(
-                1,
-                np.exp(- (1/(kB*T)) * (E1 - E0))
-            )
 
+            p_accept = min(1,np.exp(-n_phases*(E1-E0)*beta))
+
+        self.p_accept = {}
+        self.p_accept['total'] = p_accept
         return p_accept
 
     def accept_or_reject(
@@ -301,10 +315,20 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         multicell_candidate: MultiCell,
         temperature: float
     ) -> Tuple[bool, MultiCell]:
-        
+       
 
-        E0 = multicell_initial.total_energy
-        E1 = multicell_candidate.total_energy
+        self.multicell_initial = multicell_initial
+        self.multicell_candidate = multicell_candidate
+
+        n_atoms_0 = 0
+        for cn in self.multicell_initial.cell_names:
+            n_atoms_0 += self.multicell_initial.simulations[cn].poscar.n_atoms
+        E0 = self.multicell_initial.total_energy/n_atoms_0
+
+        n_atoms_1 = 0
+        for cn in self.multicell_candidate.cell_names:
+            n_atoms_1 += self.multicell_candidate.simulations[cn].poscar.n_atoms
+        E1 = self.multicell_candidate.total_energy/n_atoms_1
 
         if E1 < E0:
             is_accept = True
@@ -315,7 +339,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                 temperature = temperature
             )
             
-            if np.random.random() < p_accept:
+            self.p = np.random.random()
+            if self.p < p_accept:
                 is_accept = True
             else:
                 is_accept = False

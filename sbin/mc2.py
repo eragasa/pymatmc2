@@ -3,13 +3,19 @@ import click
 import os
 import sys
 from crontab import CronTab
-
-# this might be taken care of with a pip install
+# thVis might be taken care of with a pip install
 sys.path.append('/users/PAA0028/eragasa/repos/pymatmc2/src')
 sys.path.append('/users/PAA0028/eragasa/repos/mexm-base/src')
+from pymatmc2 import MultiCellMonteCarlo
+
+# might have to run this command first
+# export LC_ALL=en_US.UTF-8 
+
+
+
+# cron environment read .bashrc or .bash_profile
 os.environ['VASP_POTPAW_GGA'] = '/users/PAA0028/eragasa/usr/local/vasp/potpaw/potpaw_PBE.54'
  
-from pymatmc2 import MultiCellMonteCarlo
 
 PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(__file__, os.getcwd())
 PYMATMC2_STOP_CMD = "python {} --stop".format(os.path.abspath(__file__))
@@ -40,6 +46,7 @@ def pymatmc2_start(path):
         'simulations_path':'simulations',
         'is_restart':False
     }
+    
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
     o_mc2.run()    
     

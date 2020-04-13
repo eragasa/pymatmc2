@@ -124,7 +124,8 @@ class MultiCell:
         for c in self.cell_names:
             X.append(list(self.cell_concentration[c].values()))
 
-        return np.array(X)
+        X = np.array(X)
+        return X.T
 
     @property
     def molar_fraction_total(self) -> Dict[str, float]:
@@ -282,27 +283,25 @@ class MultiCell:
     def phase_molar_fraction(self):
 
         # transform cell molar fraction in a matrix
-        X = []
-        for _, v in self.cell_molar_fraction.items():
-            X.append([v[s]for s in self.symbols])
-        X = np.array(X)
+        X = self.cell_concentration_matrix
 
         # transform total molar fraction into a column vector
-        c = [v for _, v in self.total_molar_fraction.items()]            
-        c = np.array(c)
+        c = [self.concentration[s] for s in self.symbols]
 
+        # Since X c = f
+        # f = X^{-1} . c
         # solve for phase molar fraction
         f = np.dot(linalg.inv(X), c)
-        for k in f:
-            if k < 0:
+        #for k in f:
+        #    if k < 0:
                 # msg = "phase molar fraction cannot be negative\n"
                 # msg += "X:{}\n".format(X)
                 # msg += "c:{}\n".format(c)
                 # msg += "f:{}\n".format(f)
                 # raise MultiCellError(msg)
-                from scipy.optimize import nnls
-                f, residuals = nnls(X,c)
-                break 
+        #        from scipy.optimize import nnls
+        #        f, residuals = nnls(X,c)
+        #        break 
         
         return {v:f[i] for i,v in enumerate(self.cell_names)}
         
