@@ -143,6 +143,12 @@ class Pymatmc2Configuration():
 
         return mutation_weights
 
+    @mutation_weights.setter
+    def mutation_weights(self, mutation_weights: Dict[str, float]):
+        self.configuration['mutation_weights'] = OrderedDict()
+        for k, v in mutation_weights.items():
+            self.configuration['mutation_weights'][k] = v
+    
     @property
     def max_iterations(self):
         return self.configuration['max_iterations']

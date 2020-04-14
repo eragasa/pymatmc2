@@ -23,6 +23,14 @@ class MultiCellMutateAlgorithm(ABC):
         self._multicell_final = None
 
     @property
+    def configuration(self) -> Pymatmc2Configuration:
+        return self._configuration
+
+    @configuration.setter
+    def configuration(self, configuration: Pymatmc2Configuration):
+        self._configuration = configuration
+
+    @property
     def multicell_initial(self) -> MultiCell:
         return self._multicell_initial
 
@@ -97,7 +105,6 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
                 cell = SimulationCell.initialize_from_object(
                     obj = simulation.contcar
                 )
-            atom_types = [v.symbol for v in cell.atomic_basis]
             
             symbols = list(cell.symbols)
             symbol1 = np.random.choice(symbols, 1)[0]
@@ -226,6 +233,38 @@ class InterphaseSwap(MultiCellMutateAlgorithm):
 class IntraphaseFlip(MultiCellMutateAlgorithm):
     mutate_type = 'intraphase_flip'
 
+    def mutate_cell(self, phase_name: str) -> SimulationCell:
+        simulation = self.multicell_initial.simulations[phase_name]
+
+        if isinstance(simulation, VaspSimulation):
+            if isinstance(simulation.contcar, Poscar):
+                cell = deepcopy(simulation.contcar)
+            else:
+                cell = deepcopy(simulation.poscar)
+        else:
+            msg = "unknown simulation type: {}"
+            msg = msg.format(type(simulation))
+            raise TypeError(msg)
+
+        idx_atoms = list(range(cell.n_atoms))
+        idx_atom = np.random.choice(idx_atoms, 1)[0]
+
+        #old_symbol = cell.atomic_basis[idx_atom].symbol 
+        #symbols = cell.symbols
+        #symbols.remove(old_symbol)
+        symbols = cell.symbols
+        new_symbol = np.random.choice(symbols, 1)[0]
+
+        cell.atomic_basis[idx_atom].symbol = new_symbol
+
+        if isinstance(simulation, VaspSimulation):
+            self.multicell_candidate.simulations[phase_name].poscar \
+                = Poscar.initialize_from_object(obj=cell)
+        else:
+            msg = "unknown simulation type: {}"
+            msg = msg.format(type(simulation))
+            raise TypeError(msg)
+        
     def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
         """ create a new candidate multicell
 
@@ -236,59 +275,47 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
             multicell (MultiCell): the initial multicell from which to get a    candidate
         """
         self.multicell_initial = deepcopy(multicell)
-        rtn_multicell = MultiCell.initialize_from_obj(multicell=multicell)
-        while True:
-            try:
-                for phase in multicell.simulations:
-                    simulation = multicell.simulations[phase]
-
-                    # extract the structure file
-                    if isinstance(simulation, VaspSimulation):
-                        if isinstance(simulation.contcar, Poscar):
-                            cell = deepcopy(simulation.contcar)
-                        else:
-                            cell = deepcopy(simulation.poscar)
-                    else:
-                        raise ValueError('unknown simulation type')
-                    assert isinstance(cell, SimulationCell)
-
-                    # mutate the cell
-                    # select atom at random
-                    idx_atoms = list(range(cell.n_atoms))
-                    idx_atom = np.random.choice(idx_atoms, 1)[0]
-                    old_symbol = cell.atomic_basis[idx_atom].symbol
-                    
-                    # flip the symbol
-                    symbols = cell.symbols
-                    symbols.remove(old_symbol)
-                    new_symbol = np.random.choice(symbols, 1)[0]
-                    
-                    # assign new symbol
-                    cell.atomic_basis[idx_atom].symbol = new_symbol
-                
-                    if isinstance(simulation, VaspSimulation):
-                        rtn_multicell.simulations[phase].poscar \
-                            = Poscar.initialize_from_object(obj=cell)
-                    else:
-                        raise ValueError("unknown simulation type")
-                    
-                # this will raise a LinAlg error if rank deficient
-                rtn_multicell.phase_molar_fraction
-
-                is_phase_fraction_good = []
-                for f in rtn_multicell.phase_molar_fraction.values():
-                    if f > 1 or f < 0:
-                        is_phase_fraction_good.append(False)    # passing forces a retry
-                    else:
-                        is_phase_fraction_good.append(True)
-                if any(is_phase_fraction_good):
-                    break
-            except linalg.LinAlgError:
-                # passing forces a retry
-                pass
+        self.multicell_candidate = deepcopy(multicell)
         
-        self.multicell_candidate = rtn_multicell
-        return rtn_multicell
+        is_good_multicell = False
+        while not is_good_multicell:
+            for phase in multicell.simulations:
+                self.mutate_cell(phase_name=phase)
+            try:
+                self.multicell_candidate.phase_molar_fraction
+                is_full_rank = True
+            except linalg.LinAlgError:
+                is_full_rank = False
+            
+            if is_full_rank:
+                is_phase_fraction_good_array = []
+                for f in self.multicell_candidate.phase_molar_fraction.values():
+                    if f > 1 or f < 0:
+                        is_phase_fraction_good_array.append(False)
+                    else:
+                        is_phase_fraction_good_array.append(True)
+                is_valid_phase_fraction = all(is_phase_fraction_good_array)
+            else:
+                is_valid_phase_fraction = False
+            
+            is_different_concentration_array = []
+            for cn in self.configuration.cell_names:
+                cn0 = self.multicell_initial.cell_concentration[cn]
+                cn1 = self.multicell_candidate.cell_concentration[cn]
+                if cn0 == cn1:
+                    is_different_concentration_array.append(False)
+                else:
+                    is_different_concentration_array.append(True)
+            is_different_concentration = any(is_different_concentration_array)
+
+            if all(
+                is_full_rank, 
+                is_valid_phase_fraction,
+                is_different_concentration
+            ):
+                is_good_multicell = True
+                
+        return self.multicell_candidate
 
     def acceptance_probability(
         self, 
@@ -320,18 +347,20 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         self.multicell_initial = multicell_initial
         self.multicell_candidate = multicell_candidate
 
-        n_atoms_0 = 0
-        for cn in self.multicell_initial.cell_names:
-            n_atoms_0 += self.multicell_initial.simulations[cn].poscar.n_atoms
-        E0 = self.multicell_initial.total_energy/n_atoms_0
+        #n_atoms_0 = 0
+        #for cn in self.multicell_initial.cell_names:
+        #    n_atoms_0 += self.multicell_initial.simulations[cn].poscar.n_atoms
+        #E0atom = self.multicell_initial.total_energy/n_atoms_0
 
-        n_atoms_1 = 0
-        for cn in self.multicell_candidate.cell_names:
-            n_atoms_1 += self.multicell_candidate.simulations[cn].poscar.n_atoms
-        E1 = self.multicell_candidate.total_energy/n_atoms_1
+        #n_atoms_1 = 0
+        #for cn in self.multicell_candidate.cell_names:
+        #    n_atoms_1 += self.multicell_candidate.simulations[cn].poscar.n_atoms
+        #E1atom, = self.multicell_candidate.total_energy/n_atoms_1
 
+        E0 = self.multicell_initial.total_energy
+        E1 = self.multicell_initial.total_energy
         if E1 < E0:
-            is_accept = True
+            self.is_accept = True
         else:
             p_accept = self.acceptance_probability(
                 E0 = E0, 
@@ -341,14 +370,14 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
             
             self.p = np.random.random()
             if self.p < p_accept:
-                is_accept = True
+                self.is_accept = True
             else:
-                is_accept = False
+                self.is_accept = False
 
-        if is_accept:
-            return True, multicell_candidate
+        if self.is_accept:
+            self.multicell_final = self.multicell_candidate
         else:
-            return False, multicell_initial
+            self.multicell_final = self.multicell_initial
 
 class MultiCellMutateAlgorithmFactory(ABC):
     factories = {
