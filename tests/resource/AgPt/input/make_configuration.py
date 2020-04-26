@@ -32,46 +32,40 @@ configuration['atomic_configuration'] = {
         'fcc1':{
             'incar':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'INCAR_1'
+                'fcc1', 'INCAR'
             ),
             'kpoints':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'KPOINTS_1'
+                'fcc1', 'KPOINTS'
             ),
             'poscar':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'POSCAR_1'
-            ),
-            'potcar':os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'POTCAR'
+                'fcc1', 'POSCAR'
             )
         },
         'fcc2':{
             'incar':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'INCAR_2'
+                'fcc1', 'INCAR'
             ),
             'kpoints':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'KPOINTS_2'
+                'fcc1', 'KPOINTS'
             ),
             'poscar':os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'POSCAR_2'
-            ),
-            'potcar':os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'POTCAR'
+                'fcc1', 'POSCAR'
             )
         }
     }
 }
+
 configuration['max_iterations'] = 10
 configuration['mutation_weights'] = {
     'intraphase_swap':0.5,
     'intraphase_flip':0.5
 }
+
 configuration['environment_variables'] = {
     'temperature':400.0,
     'pressure':0.0

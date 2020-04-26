@@ -6,7 +6,7 @@ from mexm.elements import ELEMENTS
 from mexm.structure import SimulationCell
 from mexm.io.vasp import Poscar
 
-from tempsrc import create_random_cell
+from pymatmc2.multicell import create_random_cell
 
 def test__create_random_cell__fcc():
     cell = create_random_cell(
@@ -36,6 +36,7 @@ def dev__create_random_cell__fcc():
     print('Ag:',cell.get_number_of_atoms('Ag'))
     print('Pt:',cell.get_number_of_atoms('Pt'))
 
+    print(cell.lattice_to_string())
     poscar = Poscar.initialize_from_object(obj=cell)
     poscar.write('POSCAR')
 
