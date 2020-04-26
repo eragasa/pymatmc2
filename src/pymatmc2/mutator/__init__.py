@@ -1,2 +1,8 @@
-from basemutator import MultiCellMutateAlgorithm
-from intraphaseswap import IntraphaseSwap
+from pymatmc2.mutator.base_cell_mutator import BaseCellMutator
+from pymatmc2.mutator.cell_flip_mutator import CellFlipMutator
+from pymatmc2.mutator.cell_mutator_factory import CellMutatorFactory
+
+from pymatmc2.mutator.base_mc_mutator import BaseMultiCellMutator
+from pymatmc2.mutator.mc_intraphase_swap import IntraphaseSwapMutator
+from pymatmc2.mutator.mc_intraphase_flip import IntraphaseFlipMutator
+from pymatmc2.mutator.mc_mutator_factory import MultiCellMutatorFactory

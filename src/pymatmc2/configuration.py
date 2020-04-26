@@ -19,6 +19,7 @@ import copy
 import yaml
 from collections import OrderedDict
 from typing import Dict, List
+
 from mexm.io.filesystem import OrderedDictYAMLLoader
 
 class Pymatmc2Configuration():

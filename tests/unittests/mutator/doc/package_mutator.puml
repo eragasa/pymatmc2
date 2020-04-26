@@ -1,0 +1,20 @@
+@startuml
+
+abstract class CellMutator
+class CellFlip
+class CellMutatorFactory
+
+CellFlip --> CellMutator
+CellMutatorFactory *--> CellFlip
+
+abstract class MultiCellMutator
+class IntraphaseFlipMutator
+class IntraphaseSwapMutator
+class MulticellMutatorFactory
+
+IntraphaseFlipMutator --> MultiCellMutator
+IntraphaseSwapMutator --> MultiCellMutator
+MulticellMutatorFactory *--> IntraphaseFlipMutator
+MulticellMutatorFactory *--> IntraphaseSwapMutator
+
+@enduml

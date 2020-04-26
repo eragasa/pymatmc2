@@ -56,6 +56,7 @@ class MultiCellMutateAlgorithm(ABC):
     def multicell_final(self, mc: MultiCell):
         assert isinstance(mc, MultiCell)
         self._multicell_final = mc
+
     @abstractmethod
     def mutate_multicell(
         self,
