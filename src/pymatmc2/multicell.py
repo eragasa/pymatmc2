@@ -166,9 +166,14 @@ class MultiCell:
 
         Arguments:
             path (str)
+        Raises:
+            FileNotFoundError: if path directory does not exist.
         """
 
-        assert os.path.isdir(path)
+        if not os.path.isdir(path):
+            msg = 'cannot read read the directory:{}'.format(path)
+            raise FileNotFoundError(msg)
+        
         self.src_path = path
         self.simulations = OrderedDict()
         
