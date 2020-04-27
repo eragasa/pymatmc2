@@ -1,6 +1,9 @@
 #!/apps/python/3.6-conda5.2/bin/python
-import click
 import os
+
+os.environ['LC_ALL'] = 'en_US.UTF-8'
+# export LC_ALL=en_US.UTF-8 
+import click
 import sys
 from crontab import CronTab
 # thVis might be taken care of with a pip install

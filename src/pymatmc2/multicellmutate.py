@@ -365,7 +365,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
             p_accept = self.acceptance_probability(
                 E0 = E0, 
                 E1 = E1, 
-                temperature = temperature
+                temperature = temperature,
+                pressure = pressure
             )
             
             self.p = np.random.random()

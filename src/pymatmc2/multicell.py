@@ -98,7 +98,7 @@ class MultiCell:
         sum_U = 0
         for phase in self.simulations:
             U = self.simulations[phase].total_energy
-            U_per_atom = U /self.simulations[phase].n_atoms
+            U_per_atom = U /self.simulations[phase].structure.n_atoms
             f = self.phase_molar_fraction[phase]
             sum_U += U * f
 
