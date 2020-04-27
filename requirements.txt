@@ -1,2 +1,2 @@
-ase
+ase-3.19.1
 python-crontab-2.4.0

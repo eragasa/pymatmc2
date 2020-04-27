@@ -16,6 +16,9 @@ import os
 import copy
 import yaml
 import tarfile
+import ase
+
+from typing import List
 
 from mexm.io.filesystem import OrderedDictYAMLLoader
 from pymatmc2 import Pymatmc2Configuration
@@ -39,6 +42,67 @@ class Pymatmc2Results():
         self.results_path = results_path
         self.tarball_path = tarball_path
 
+    @property
+    def column_names(self) -> List[str]:
+        """ :List(str)  - a list of the column names"""
+        cell_names = self.configuration.cell_names
+        symbols = self.configuration.symbols
+
+        column_names = ['iteration', 'mutate_type']
+        
+        # initial concentrations
+        for cell_name in cell_names:
+            for symbol in symbols:
+                name = 'initial.{}.{}'.format(cell_name, symbol)
+                column_names += [name]
+
+        # candidate concentrations
+        for cell_name in cell_names:
+            for symbol in symbols:
+                name = 'candidate.{}.{}'.format(cell_name, symbol)
+                column_names += [name]
+
+        # final concentrations
+        for cell_name in cell_names:
+            for symbol in symbols:
+                name = 'final.{}.{}'.format(cell_name, symbol)
+                column_names += [name]
+
+        # initial phase molar fractions
+        for cell_name in cell_names:
+            name = 'initial.{}.f'.format(cell_name)
+            column_names += [name]
+
+        #candidate phase molar fractions
+        for cell_name in cell_names:
+            name = 'candidate.{}.f'.format(cell_name)
+            column_names += [name]
+
+        #final phase molar fractions
+        for cell_name in cell_names:
+            name = 'final.{}.f'.format(cell_name)
+            column_names += [name]
+
+        # initial energies
+        for cell_name in cell_names:
+            name = 'initial.{}.E'.format(cell_name)
+            column_names += [name]
+        name = 'initial.total.E'
+        column_names += [name]
+
+        # candidate_energies
+        for cell_name in cell_names:
+            name = 'candidate.{}.E'.format(cell_name)
+            column_names += [name]
+        name = 'candidate.total.E'
+        column_names += [name]
+
+        # final energies
+        for cell_name in cell_names:
+            name = 'final.{}.E'.format(cell_name)
+            column_names += [name]
+        name = 'final.total.E'
+
     def archive_multicell(self, i_iteration: int, path: str, mc_type: str):
         if os.path.exists(self.tarball_path):
             tf = tarfile.open(self.tarball_path, mode='a')
@@ -47,7 +111,7 @@ class Pymatmc2Results():
 
         if self.configuration.calculator_type == 'vasp':
             archived_files = [
-                'POSCAR', 'INCAR', 'KPOINTS', 'OUTCAR', 'OSZICAR', 'CONTCAR'
+                'POSCAR', 'INCAR', 'KPOINTS', 'OUTCAR', 'OSZICAR', 'CONTCAR', 'vasprun.xml'
             ]
 
             for cell_name in self.configuration.cell_names:

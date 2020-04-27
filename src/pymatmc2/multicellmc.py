@@ -258,28 +258,38 @@ class MultiCellMonteCarlo():
         self.submit_jobs(i_iteration=i_iteration)
     
     def process_iteration(self, i_iteration: int):
+        """
+
+        Arguments:
+            i_iteration (int): the iteration of the simulations to process
+        """
+
+        # the initial configuration
         src_mc_initial_path = os.path.join(
             self.results_path,
             self.phase_space_name,
-            self.get_iteration_string(i_iteration-1),
-            'final'
+            self.get_iteration_string(i_iteration),
+            'initial'
         )
+
+        # the candidate configuration are the simulation which have just
+        # been completed
         src_mc_candidate_path = os.path.join(
             self.simulations_path,
             self.phase_space_name,
             self.get_iteration_string(i_iteration)
         )
+        mc_candidate = MultiCell()
+        mc_candidate.configuration = self.configuration
+        mc_candidate.read(path=src_mc_candidate_path)
+
         src_mutate_type = os.path.join(
             self.results_path,
             self.phase_space_name,
             self.get_iteration_string(i_iteration),
             'mutate_type'
         )
-        dst_path = os.path.join(
-            self.results_path,
-            self.phase_space_name,
-            self.get_iteration_string(i_iteration)
-        )
+
         dst_mc_initial_path = os.path.join(
             self.results_path,
             self.phase_space_name,
@@ -290,7 +300,7 @@ class MultiCellMonteCarlo():
             self.results_path,
             self.phase_space_name,
             self.get_iteration_string(i_iteration),
-            'candidates'
+            'candidate'
         )
         dst_mc_final_path = os.path.join(
             self.results_path,
@@ -318,23 +328,29 @@ class MultiCellMonteCarlo():
                 os.mkdir(dst_path)
             mc_final.archive(dst_path = dst_mc_final_path)
         else:
+
+            # read the initial cell
             mc_initial = MultiCell()
             mc_initial.configuration = self.configuration
             mc_initial.read(path=src_mc_initial_path)
 
+            # read the candidate cell
             mc_candidate = MultiCell()
             mc_candidate.configuration = self.configuration
             mc_candidate.read(path=src_mc_candidate_path)
 
+            # read the mutation type
             with open(src_mutate_type, 'r') as f:
                 mutate_type = f.read()
           
-            temperature = self.configuration.temperature 
+            temperature = self.configuration.temperature
+            pressure = self.configuration.pressure
             mutator = MultiCellMutateAlgorithmFactory.factories[mutate_type]()
             is_accept, mc_final = mutator.accept_or_reject(
                 multicell_initial = mc_initial,
                 multicell_candidate = mc_candidate,
-                temperature = temperature
+                temperature = temperature,
+                pressure = pressure
             )
 
             mc_initial.archive(dst_path=dst_mc_initial_path)

@@ -9,6 +9,7 @@ from numpy import linalg
 
 from mexm.structure import SimulationCell
 from mexm.io.vasp import Poscar
+from mexm.simulation import Simulation
 from mexm.simulation import VaspSimulation
 
 from pymatmc2 import Pymatmc2Configuration
@@ -33,7 +34,18 @@ class MultiCell:
         self.dst_path = None
         self.configuration = None
         self._molar_fraction_total = None
-        self.simulations = None
+        self._simulations = None
+
+    @property
+    def simulations(self) -> Dict[str, Simulation]:
+        return self._simulations
+
+    @simulations.setter
+    def simulations(self, simulations: Dict[str, Simulation]):
+        for k, v in simulations.items():
+            assert isinstance(k, str)
+            assert issubclass(v, Simulation)
+        self._simulations = simulations
 
     @staticmethod
     def initialize_from_obj(multicell):
@@ -86,6 +98,7 @@ class MultiCell:
         sum_U = 0
         for phase in self.simulations:
             U = self.simulations[phase].total_energy
+            U_per_atom = U /self.simulations[phase].n_atoms
             f = self.phase_molar_fraction[phase]
             sum_U += U * f
 
