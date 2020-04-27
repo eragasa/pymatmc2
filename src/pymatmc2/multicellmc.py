@@ -290,6 +290,11 @@ class MultiCellMonteCarlo():
             'mutate_type'
         )
 
+        dst_path = os.path.join(
+            self.results_path,
+            self.phase_space_name
+        )
+
         dst_mc_initial_path = os.path.join(
             self.results_path,
             self.phase_space_name,
