@@ -264,12 +264,13 @@ class MultiCellMonteCarlo():
             i_iteration (int): the iteration of the simulations to process
         """
 
-        # the initial configuration
+        # the initial configuration for the current iteration is the
+        # final configuration of the previous one
         src_mc_initial_path = os.path.join(
             self.results_path,
             self.phase_space_name,
-            self.get_iteration_string(i_iteration),
-            'initial'
+            self.get_iteration_string(i_iteration-1),
+            'final'
         )
 
         # the candidate configuration are the simulation which have just
@@ -279,9 +280,6 @@ class MultiCellMonteCarlo():
             self.phase_space_name,
             self.get_iteration_string(i_iteration)
         )
-        mc_candidate = MultiCell()
-        mc_candidate.configuration = self.configuration
-        mc_candidate.read(path=src_mc_candidate_path)
 
         src_mutate_type = os.path.join(
             self.results_path,
