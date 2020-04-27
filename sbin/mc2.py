@@ -7,7 +7,7 @@ from crontab import CronTab
 sys.path.append('/users/PAA0028/eragasa/repos/pymatmc2/src')
 sys.path.append('/users/PAA0028/eragasa/repos/mexm-base/src')
 from pymatmc2 import MultiCellMonteCarlo
-
+from pymatmc2 import Pymatmc2Configuration
 # might have to run this command first
 # export LC_ALL=en_US.UTF-8 
 
@@ -92,6 +92,7 @@ def pymatmc2_continue(path):
         'is_restart':True
     }
     o_mc2 = MultiCellMonteCarlo(**kwargs_mc2)
+    assert isinstance(o_mc2.configuration, Pymatmc2Configuration)
     is_max_iterations = o_mc2.run()    
 
     if is_max_iterations:

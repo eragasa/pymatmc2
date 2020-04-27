@@ -17,6 +17,7 @@ from pymatmc2 import constants
 
 class MultiCellMutateAlgorithm(ABC):
     def __init__(self):
+        self._configuration = None
         self.multicell = None
         self._multicell_initial = None
         self._multicell_candidate = None
@@ -56,7 +57,6 @@ class MultiCellMutateAlgorithm(ABC):
     def multicell_final(self, mc: MultiCell):
         assert isinstance(mc, MultiCell)
         self._multicell_final = mc
-
     @abstractmethod
     def mutate_multicell(
         self,
@@ -300,7 +300,7 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                 is_valid_phase_fraction = False
             
             is_different_concentration_array = []
-            for cn in self.configuration.cell_names:
+            for cn in self.multicell_initial.cell_names:
                 cn0 = self.multicell_initial.cell_concentration[cn]
                 cn1 = self.multicell_candidate.cell_concentration[cn]
                 if cn0 == cn1:
@@ -309,11 +309,11 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
                     is_different_concentration_array.append(True)
             is_different_concentration = any(is_different_concentration_array)
 
-            if all(
+            if all([
                 is_full_rank, 
                 is_valid_phase_fraction,
                 is_different_concentration
-            ):
+            ]):
                 is_good_multicell = True
                 
         return self.multicell_candidate
@@ -348,18 +348,9 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         self.multicell_initial = multicell_initial
         self.multicell_candidate = multicell_candidate
 
-        #n_atoms_0 = 0
-        #for cn in self.multicell_initial.cell_names:
-        #    n_atoms_0 += self.multicell_initial.simulations[cn].poscar.n_atoms
-        #E0atom = self.multicell_initial.total_energy/n_atoms_0
-
-        #n_atoms_1 = 0
-        #for cn in self.multicell_candidate.cell_names:
-        #    n_atoms_1 += self.multicell_candidate.simulations[cn].poscar.n_atoms
-        #E1atom, = self.multicell_candidate.total_energy/n_atoms_1
-
         E0 = self.multicell_initial.total_energy
-        E1 = self.multicell_initial.total_energy
+        E1 = self.multicell_candidate.total_energy
+        
         if E1 < E0:
             self.is_accept = True
         else:
@@ -380,6 +371,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         else:
             self.multicell_final = self.multicell_initial
 
+        return self.is_accept, self.multicell_final
+
 class MultiCellMutateAlgorithmFactory(ABC):
     factories = {
         'interphase_swap': InterphaseSwap,
@@ -391,8 +384,6 @@ class MultiCellMutateAlgorithmFactory(ABC):
     Attributes:
         configuration (Pymatmc2Configuration)
     """
-    def __init__(self):
-        self.configuration = None
 
     @property
     def mutation_types(self) -> List[str]:

@@ -19,7 +19,6 @@ import copy
 import yaml
 from collections import OrderedDict
 from typing import Dict, List
-
 from mexm.io.filesystem import OrderedDictYAMLLoader
 
 class Pymatmc2Configuration():
@@ -91,7 +90,18 @@ class Pymatmc2Configuration():
         cell_names = [k for k in self.simulation_cells] 
         return cell_names
 
+    @property
+    def phase_point_string(self) -> str:
+        T = int(self.temperature)
+        P = int(self.pressure)
 
+        fmt = "{}K_{}GPa"
+        return  fmt.format(T, P)
+
+    def get_iteration_string(self, i: int) -> str:
+        fmt = '{:05}'
+
+        return fmt.format(i)
     @property
     def temperature(self) -> float:
         temperature = self.configuration['environment_variables']['temperature']
