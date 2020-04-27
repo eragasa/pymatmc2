@@ -1,7 +1,10 @@
 from copy import deepcopy
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 import warnings
-from typing import Tuple, List, Dict
+from typing import Tuple
+from typing import List
+from typing import Dict
 import numpy as np
 import numpy.linalg as linalg
 
@@ -55,13 +58,14 @@ class MultiCellMutateAlgorithm(ABC):
 
     @multicell_final.setter
     def multicell_final(self, mc: MultiCell):
-        assert isinstance(mc, MultiCell)
+        if not isinstance(mc, MultiCell):
+            msg = "multicell_final must be an instance of MultiCell"
+            raise TypeError(msg)
+        
         self._multicell_final = mc
+        
     @abstractmethod
-    def mutate_multicell(
-        self,
-        multicell: MultiCell
-    ) -> MultiCell:
+    def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
         raise NotImplementedError
 
     @abstractmethod
@@ -69,7 +73,8 @@ class MultiCellMutateAlgorithm(ABC):
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> Tuple[bool, MultiCell]:
         raise NotImplementedError
 
@@ -135,7 +140,8 @@ class IntraphaseSwap(MultiCellMutateAlgorithm):
         self, 
         E0: float,
         E1: float,
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> float:
         """
         
@@ -322,7 +328,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         self, 
         E0: float, 
         E1: float, 
-        temperature: float
+        temperature: float,
+        pressure: float
     ):
         kB = constants.BOLTZMANN
         T = temperature
@@ -341,7 +348,8 @@ class IntraphaseFlip(MultiCellMutateAlgorithm):
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> Tuple[bool, MultiCell]:
        
 
