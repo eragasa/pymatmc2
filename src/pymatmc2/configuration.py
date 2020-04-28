@@ -102,6 +102,7 @@ class Pymatmc2Configuration():
         fmt = '{:05}'
 
         return fmt.format(i)
+
     @property
     def temperature(self) -> float:
         temperature = self.configuration['environment_variables']['temperature']
@@ -125,6 +126,15 @@ class Pymatmc2Configuration():
             concentration[k] = v/sum_concentration
 
         return concentration
+
+    @property
+    def symbols(self) -> List[str]:
+        
+        symbols = []
+        for k in self.configuration['atomic_configuration']['molar_fraction_total']:
+            symbols.append(k)
+
+        return symbols
 
     @property
     def hpc_manager(self) -> dict:

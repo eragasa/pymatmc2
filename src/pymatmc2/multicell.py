@@ -81,7 +81,6 @@ class MultiCell:
                 obj.simulations[k] = VaspSimulation()
                 obj.simulations[k].poscar.read(path=v['poscar'])
                 obj.simulations[k].incar.read(path=v['incar'])
-                obj.simulations[k].potcar.read(path=v['potcar'])
                 obj.simulations[k].kpoints.read(path=v['kpoints']) 
 
         return obj
@@ -100,9 +99,9 @@ class MultiCell:
             U = self.simulations[phase].total_energy
             U_per_atom = U /self.simulations[phase].structure.n_atoms
             f = self.phase_molar_fraction[phase]
-            sum_U += U * f
+            sum_U += U_per_atom * f
 
-        return m * sum_U
+        return sum_U
 
     @property
     def concentration(self) -> Dict[str, float]:

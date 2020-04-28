@@ -23,6 +23,12 @@ from typing import List
 from mexm.io.filesystem import OrderedDictYAMLLoader
 from pymatmc2 import Pymatmc2Configuration
 
+
+
+
+
+
+
 class Pymatmc2Results():
     """
 
@@ -32,15 +38,25 @@ class Pymatmc2Results():
 
     def __init__(self,
         configuration: Pymatmc2Configuration,
-        results_path='pymatmc2.results', 
-        tarball_path='pymatmc2.tar'
     ):
-        assert isinstance(results_path, str)
-        assert isinstance(tarball_path, str)
-
+        self._configuration = None
         self.configuration = configuration
-        self.results_path = results_path
-        self.tarball_path = tarball_path
+
+        self.tar_path = self.configuration.results_tar_path
+        self.data_path = self.configuration.results_file_path
+
+
+    @property
+    def configuration(self) -> Pymatmc2Configuration:
+        return self._configuration
+
+    @configuration.setter
+    def configuration(self, configuration: Pymatmc2Configuration):
+        if not isinstance(configuration, Pymatmc2Configuration):
+            msg = "configuration must be an instance of Pymatmc2Configuration"
+            raise TypeError(msg)
+
+        self._configuration = configuration
 
     @property
     def column_names(self) -> List[str]:
@@ -102,6 +118,61 @@ class Pymatmc2Results():
             name = 'final.{}.E'.format(cell_name)
             column_names += [name]
         name = 'final.total.E'
+
+        return column_names
+
+    def get_iteration_path(self, i_iteration: int) -> str:
+        iteration_path = os.path.join(
+            self.configuration.results_path,
+            self.configuration.phase_point_string,
+            self.configuration.get_iteration_string(i=i_iteration)
+        )
+        return iteration_path
+
+    def get_mc_path(self, i_iteration: int, mc_type: str):
+        
+        mc_types = ['initial', 'candidate', 'final']
+        if mc_type not in mc_types:
+            msg = "Invalid mc_type: {}".format(mc_type)
+            raise ValueError(msg)
+
+        mc_path = os.path.join(
+            self.get_iteration_path(i_iteration),
+            mc_type)
+        
+        return mc_path
+
+    def get_mutate_type(self, i_iteration: int) -> str:
+        iteration_path = self.get_iteration_path(i_iteration)
+        mutate_type_path = os.path.join(iteration_path, 'mutate_type')
+        with open(mutate_type_path) as f:
+            mutate_type = f.read()
+        return mutate_type
+
+    def get_iteration_info(configuration: Pymatmc2Configuration, i_iteration: int):
+
+        mc_types = ['initial', 'candidate', 'final']
+        mc_paths = {}
+        for mc_type in mc_types:
+            mc_path[mc_type] = self.get_mc_path(i_iteration, mc_type)
+
+        mc = {}
+        for k,v in mc_paths.items():
+            mc[k] = MultiCell()
+            mc[k].configuration = configuration
+            mc[k].read(path=mc_paths[k])
+
+    def get_is_accepted_path(self, i_iteration: int) -> str:    
+        iteration_path = self.get_iteration_path(i_iteration)
+        is_accepted_path = os.path.join(iteration_path, 'is_accepted')
+        return is_accepted_path
+    
+    def write_header_line(self):
+        str_header = ",".join(self.column_names) + "\n"
+
+        with open(self.data_path, 'w') as f:
+            f.write(str_header)
+
 
     def archive_multicell(self, i_iteration: int, path: str, mc_type: str):
         if os.path.exists(self.tarball_path):
