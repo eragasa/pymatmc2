@@ -1,10 +1,11 @@
 import pytest
-
+import os
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import Pymatmc2Results
 
-pymatmc2_config_path = 'pymatmc2.config'
-pymatmc2_data_path = 'pymatmc2.data'
+resources_path = os.path.join('resources', 'test____init__')
+pymatmc2_config_path = os.path.join(resources_path, 'pymatmc2.config')
+pymatmc2_data_path = os.path.join(resources_path, 'pymatmc2.data')
 
 def test__default_constructor():
     configuration = Pymatmc2Configuration()
@@ -12,6 +13,5 @@ def test__default_constructor():
 
     results = Pymatmc2Results()
     results.configuration = configuration
-
 if __name__ == "__main__":
     pass
