@@ -16,8 +16,8 @@ from mexm.simulation import VaspSimulation
 
 # Pymatmc2 import
 from pymatmc2 import constants
-from pymatmc2.mutator import BaseMultiCellMutator
 from pymatmc2 import MultiCell
+from pymatmc2.mutator import BaseMultiCellMutator
 
 class IntraphaseFlipMutator(BaseMultiCellMutator):
     mutate_type = 'intraphase_flip'

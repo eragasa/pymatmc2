@@ -6,28 +6,27 @@ from pymatmc2 import MultiCell
 from pymatmc2.mutator import BaseMultiCellMutator
 from pymatmc2.mutator import IntraphaseFlipMutator
 
-pymatmc2_resource_AuPt_path = os.path.join('resources', 'test____init__')
-pymatmc2_configuration_AuPt_path = os.path.join(
-    pymatmc2_configuration_AuPt_path,
-    'pymatmc2.config'
-)
+resource_path = os.path.join('resources', 'test____init__')
+configuration_path = os.path.join(resource_path, 'pymatmc2.config')
 
 
 def test__static_property():
     expected_mutator_type = 'intraphase_flip'
-    assert IntraphaseFlipMutator.mutator_type == 'intraphase_flip'
+    assert IntraphaseFlipMutator.mutate_type == 'intraphase_flip'
+
+def dev__static_property():
+    print('IntraphaseFlipMutator.mutator_type={}'.format(IntraphaseFlipMutator.mutate_type))
 
 def test__implements_base_class():
     for abstractmethod in BaseMultiCellMutator.__abstractmethods__:
         assert abstractmethod not in IntraphaseFlipMutator.__abstractmethods__
 
 def test__constructor():
-    configuration_path = 'pymatmc2.config'
     configuration = Pymatmc2Configuration()
     configuration.read(path=configuration_path)
 
     mutator = IntraphaseFlipMutator()
-    assert issubclass(IntraphaseFlipMutator, MultiCellMutator)
+    assert issubclass(IntraphaseFlipMutator, BaseMultiCellMutator)
 
 def is_overridden_function(func):
     obj = func.__self__
