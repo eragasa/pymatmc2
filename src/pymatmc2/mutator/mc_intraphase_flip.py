@@ -125,7 +125,8 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         self, 
         E_initial: float, 
         E_candidate: float, 
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> float:
         """ Calculate the acceptance/rejection probability
 
@@ -141,6 +142,8 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
 
+            E1 = E_candidate
+            E0 = E_initial
 
             p_accept = min(1,np.exp(-n_phases*(E1-E0)*beta))
 
@@ -152,29 +155,56 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> Tuple[bool, MultiCell]:
         
+        if not isinstance(temperature, float):
+           msg = 'temperature must be a numeric type'
+           raise TypeError(msg)
 
-        E0 = multicell_initial.total_energy
-        E1 = multicell_candidate.total_energy
+        if not isinstance(pressure, float):
+            msg = 'pressure must be a numeric type'
+            raise TypeError(msg)
+
+        self.multicell_initial = deepcopy(multicell_initial)
+        self.multicell_candidate = deepcopy(multicell_candidate)
+ 
+        E0 = self.multicell_initial.total_energy
+        E1 = self.multicell_candidate.total_energy
+
+        
+        self.is_accept = {}
+        for k in self.configuration.cell_names:
+            self.is_accept[k] = None
+        self.is_accept['total'] = None
+
+        self.p_accept = {}
+        for k in self.configuration.cell_names:
+            self.p_accept[k] = None
+        self.p_accept['total'] = None
+
+        self.p_accept_rnd = {}
+        for k in self.configuration.cell_names:
+            self.p_accept_rnd[k] = None
+        self.p_accept_rnd['total'] = None        
 
         if E1 < E0:
-            is_accept = True
+            self.is_accept['total'] = True
         else:
-            p_accept = self.acceptance_probability(
-                E0 = E0, 
-                E1 = E1, 
-                temperature = temperature
+            self.p_accept['total'] = self.acceptance_probability(
+                E_initial = E0, 
+                E_candidate = E1, 
+                temperature = temperature,
+                pressure = pressure
             )
-            
-            self.p = np.random.random()
-            if self.p < p_accept:
-                is_accept = True
+ 
+            self.p_accept_rnd['total'] = np.random.random()
+            if self.p_accept_rnd['total'] < self.p_accept['total']:
+                self.is_accept['total'] = True
             else:
-                is_accept = False
+                self.is_accept['total'] = False
 
-        if is_accept:
-            return True, multicell_candidate
-        else:
-            return False, multicell_initial
+        self.multicell_final = deepcopy(self.multicell_candidate)
+
+        return self.is_accept['total'], self.multicell_final

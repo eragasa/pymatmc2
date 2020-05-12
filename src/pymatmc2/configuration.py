@@ -113,11 +113,11 @@ class Pymatmc2Configuration():
         return self.configuration['environment_variables']['pressure']
 
     @property
-    def concentration(self) -> Dict[str, float]:
+    def total_concentration(self) -> Dict[str, float]:
 
         # make local copy of the composition
         concentration = OrderedDict()
-        for k, v in self.configuration['atomic_configuration']['molar_fraction_total'].items():
+        for k, v in self.configuration['atomic_configuration']['total_concentration'].items():
             concentration[k] = v
 
         # sum of composition, should be equal to one.  force normalization.
@@ -131,7 +131,7 @@ class Pymatmc2Configuration():
     def symbols(self) -> List[str]:
         
         symbols = []
-        for k in self.configuration['atomic_configuration']['molar_fraction_total']:
+        for k in self.configuration['atomic_configuration']['total_concentration']:
             symbols.append(k)
 
         return symbols
@@ -139,22 +139,6 @@ class Pymatmc2Configuration():
     @property
     def hpc_manager(self) -> dict:
         return self.configuration['hpc_manager']
-        
-    # deprecate
-    @property
-    def molar_fraction_total(self) -> Dict[str, float]:
-        
-        # make local copy of the composition
-        composition = OrderedDict()
-        for k, v in self.configuration['atomic_configuration']['molar_fraction_total'].items():
-            composition[k] = v
-
-        # sum of composition, should be equal to one.  force normalization.
-        sum_composition = sum(composition.values())
-        for k, v in composition.items():
-            composition[k] = v/sum_composition
-
-        return composition
 
     @property
     def mutation_weights(self):

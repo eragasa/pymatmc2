@@ -105,11 +105,6 @@ class MultiCellMonteCarlo():
             is_restart = self.is_restart
         )
 
-        assert isinstance(self.configuration, Pymatmc2Configuration)
-        # assert isinstance(self.results, Pymatmc2Results)
-        assert isinstance(self.logfile, Pymatmc2Log)
-        assert os.path.isdir(self.simulations_path)
-
     @property
     def phase_space_name(self) -> str:
         name = self.get_phase_space_name(
@@ -290,7 +285,8 @@ class MultiCellMonteCarlo():
 
         dst_path = os.path.join(
             self.results_path,
-            self.phase_space_name
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration)
         )
 
         dst_mc_initial_path = os.path.join(
