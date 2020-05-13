@@ -29,6 +29,9 @@ from pymatmc2 import MultiCell
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import Pymatmc2Results
+from pymatmc2 import Pymatmc2Tarball
+from pymatmc2 import Pymatmc2Data
+
 from pymatmc2.utils import clear_folders
 from pymatmc2.utils import save_log
 from pymatmc2.utils import get_ratio
@@ -37,9 +40,15 @@ from pymatmc2.utils import run_job
 from pymatmc2.utils import stop_check
 from pymatmc2.utils import prepare
 
+# the results file needs to maintain state of the system
+from pymatmc2.mutator import BaseMultiCellMutator
+from pymatmc2.mutator import IntraphaseFlipMutator
+from pymatmc2.mutator import IntraphaseSwapMutator
+from pymatmc2.mutator import MultiCellMutatorFactory
+
+# old
 from pymatmc2.multicellmutate import IntraphaseFlip
 from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
-# the results file needs to maintain state of the system
 
 
 class MultiCellMonteCarlo():
@@ -109,7 +118,7 @@ class MultiCellMonteCarlo():
         # assert isinstance(self.results, Pymatmc2Results)
         assert isinstance(self.logfile, Pymatmc2Log)
         assert os.path.isdir(self.simulations_path)
-
+      
     @property
     def phase_space_name(self) -> str:
         name = self.get_phase_space_name(
@@ -330,6 +339,7 @@ class MultiCellMonteCarlo():
             if not os.path.isdir(dst_path):
                 os.mkdir(dst_path)
             mc_final.archive(dst_path = dst_mc_final_path)
+
         else:
 
             # read the initial cell
@@ -361,6 +371,7 @@ class MultiCellMonteCarlo():
             mc_final.archive(dst_path=dst_mc_final_path)
             with open(dst_is_accepted, 'w') as f:
                 f.write(str(is_accept))
+
 
     def create_simulations(self, i_iteration:int):
         if i_iteration == 0:
