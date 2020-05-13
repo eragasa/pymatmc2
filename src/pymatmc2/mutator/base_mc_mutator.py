@@ -26,7 +26,7 @@ class BaseMultiCellMutator(ABC):
         self._multicell_initial = None
         self._multicell_candidate = None
         self._multicell_final = None
-
+        self._is_accept = None
     @property
     def configuration(self) -> Pymatmc2Configuration:
         return self._configuration
@@ -41,7 +41,9 @@ class BaseMultiCellMutator(ABC):
 
     @multicell_initial.setter
     def multicell_initial(self, mc: MultiCell):
-        assert isinstance(mc, MultiCell)
+        if not isinstance(mc, MultiCell):
+            msg = 'multicell_initial must be type pymatmc2.MultiCell'
+            raise TypeError(msg)
         self._multicell_initial = mc
 
     @property
@@ -50,7 +52,9 @@ class BaseMultiCellMutator(ABC):
 
     @multicell_candidate.setter
     def multicell_candidate(self, mc: MultiCell):
-        assert isinstance(mc, MultiCell)
+        if not isinstance(mc, MultiCell):
+            msg = 'multicell_candidate must be type pymatmc2.MultiCell'
+            raise TypeError(msg)
         self._multicell_candidate = mc
 
     @property
@@ -59,7 +63,10 @@ class BaseMultiCellMutator(ABC):
 
     @multicell_final.setter
     def multicell_final(self, mc: MultiCell):
-        assert isinstance(mc, MultiCell)
+        if not isinstance(mc, MultiCell):
+            msg = 'multicell_final must be type pymatmc2.MultiCell'
+            raise TypeError(msg)
+
         self._multicell_final = mc
 
     @abstractmethod
@@ -74,7 +81,7 @@ class BaseMultiCellMutator(ABC):
         self,
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
-        temperature: float
+        temperature: float,
+        pressure: float
     ) -> Tuple[bool, MultiCell]:
-        raise NotImplementedError
-
+        raise 

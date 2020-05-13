@@ -41,14 +41,8 @@ from pymatmc2.utils import stop_check
 from pymatmc2.utils import prepare
 
 # the results file needs to maintain state of the system
-from pymatmc2.mutator import BaseMultiCellMutator
-from pymatmc2.mutator import IntraphaseFlipMutator
-from pymatmc2.mutator import IntraphaseSwapMutator
 from pymatmc2.mutator import MultiCellMutatorFactory
 
-# old
-from pymatmc2.multicellmutate import IntraphaseFlip
-from pymatmc2.multicellmutate import MultiCellMutateAlgorithmFactory
 
 
 class MultiCellMonteCarlo():
@@ -114,11 +108,6 @@ class MultiCellMonteCarlo():
             is_restart = self.is_restart
         )
 
-        assert isinstance(self.configuration, Pymatmc2Configuration)
-        # assert isinstance(self.results, Pymatmc2Results)
-        assert isinstance(self.logfile, Pymatmc2Log)
-        assert os.path.isdir(self.simulations_path)
-      
     @property
     def phase_space_name(self) -> str:
         name = self.get_phase_space_name(
@@ -299,7 +288,8 @@ class MultiCellMonteCarlo():
 
         dst_path = os.path.join(
             self.results_path,
-            self.phase_space_name
+            self.phase_space_name,
+            self.get_iteration_string(i_iteration)
         )
 
         dst_mc_initial_path = os.path.join(

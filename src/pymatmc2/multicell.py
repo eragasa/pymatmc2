@@ -107,11 +107,12 @@ class MultiCell:
 
         assert isinstance(self.configuration, Pymatmc2Configuration)
 
-        sum_concentration = sum(self.configuration.concentration.values())
+        total_concentration = self.configuration.total_concentration
+        sum_concentration = sum(total_concentration.values())
         
         concentration = OrderedDict()
         for s in self.symbols:
-            concentration_symbol =  self.configuration.concentration[s]
+            concentration_symbol =  total_concentration[s]
             concentration[s] = concentration_symbol/sum_concentration
 
         return concentration
@@ -175,7 +176,7 @@ class MultiCell:
         self.src_path = path
         self.simulations = OrderedDict()
         
-        for cell_name in self.configuration.simulation_cells:
+        for cell_name in self.configuration.cell_names:
             if self.configuration.calculator_type == 'vasp':
                 vasp_simulation_path = os.path.join(path, cell_name)
                 self.simulations[cell_name] = VaspSimulation()
@@ -382,17 +383,25 @@ def create_random_cell(
     assert all([isinstance(k, int) for k in supercell])
 
     sum_composition = sum(composition.values())
-    composition_ = {
-        k:v/sum_composition for k, v in composition.items()
-    }
-    max_atmrad = max([ELEMENTS[k].vdwrad for k in composition_])
-    cell_type_to_unit_cell_map = {
-        'bcc': get_bcc_cell,
-        'fcc': get_fcc_cell,
-        'hcp': get_hcp_cell
-    } 
-    cell = cell_type_to_unit_cell_map[cell_type](r=max_atmrad)
-    cell = make_super_cell(structure=cell, sc=supercell)
+    composition_ = {k:v/sum_composition for k, v in composition.items()}
+
+    atmradii = [ELEMENTS[k].atmrad for k in composition_]
+    max_atmrad = max(atmradii)
+
+    if cell_type == 'bcc':
+        unit_cell = get_bcc_cell(r=max_atmrad)
+    elif cell_type == 'fcc':
+        unit_cell = get_fcc_cell(r=max_atmrad)
+    elif cell_type == 'hcp':
+        unit_cell = get_hcp_cell(r=max_atmrad)
+    else:
+        msg = 'unknown cell_type:{}'.format(cell_type)
+        raise ValueError(msg)
+
+    cell = make_super_cell(
+        structure = unit_cell, 
+        sc=supercell
+    )
 
     idx_atoms_all = [k for k in range(cell.n_atoms)]
     idx_atoms = {}
