@@ -21,6 +21,7 @@ def test__constructor__default__AgPt():
     assert os.path.isdir(simulations_path)
     assert os.path.isdir(simulations_phase_point_path)
 
+    # cleanup
     shutil.rmtree('simulations')
     shutil.rmtree('results')
 
@@ -40,6 +41,7 @@ def test__constructor__default__HfZrTaNb():
     assert os.path.isdir(simulations_path)
     assert os.path.isdir(simulations_phase_point_path)
 
+    #cleanup
     shutil.rmtree('simulations')
     shutil.rmtree('results')
 
