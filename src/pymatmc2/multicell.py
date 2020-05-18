@@ -415,8 +415,9 @@ def create_random_cell(
         ])
         probability = composition_[symbol]/sum_composition
 
-        n_atoms = int(cell.n_atoms * probability) \
-            - sum([len(v) for v in idx_atoms.values()])
+        n_atoms = int(cell.n_atoms * probability)
+        #n_atoms = int(cell.n_atoms * probability) \
+        #    - sum([len(v) for v in idx_atoms.values()])
 
         for i_atom in range(n_atoms):
             idx = np.random.choice(idx_atoms_all, 1).tolist()[0]
