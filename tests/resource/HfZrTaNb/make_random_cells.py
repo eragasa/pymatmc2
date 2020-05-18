@@ -25,10 +25,12 @@ def dev__make_random_cell__bcc__HfZrTaNb__to_poscar():
     configuration.read(path=configuration_path)
     total_concentration = configuration.total_concentration
     
-    cell = create_random_cell(cell_type=cell_type, composition=total_concentration, supercell=sc)
-    o_poscar = Poscar.initialize_from_object(cell)
-    poscar_path = os.path.join('{}.vasp'.format(phase))
-    o_poscar.write(poscar_path)
+    for phase_name in configuration.cell_names:
+        cell = create_random_cell(cell_type=cell_type, composition=total_concentration, supercell=sc)
+        o_poscar = Poscar.initialize_from_object(cell)
+        poscar_path = os.path.join('resources', phase_name, 'POSCAR')
+        print(poscar_path)
+        o_poscar.write(poscar_path)
 
 if __name__ == "__main__":
-    dev__make_random_cell__bcc__HfZrTaNb()
+    dev__make_random_cell__bcc__HfZrTaNb__to_poscar()

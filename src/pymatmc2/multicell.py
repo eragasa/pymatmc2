@@ -365,6 +365,15 @@ def get_hcp_cell():
     simulation_cell = SimulationCell()
     return simulation_cell
 
+def get_unit_cell(cell_type: str, r= float) -> SimulationCell:
+    unit_cell_factories = {
+        'bcc': get_bcc_cell,
+        'fcc': get_fcc_cell,
+        'hcp': get_hcp_cell
+    }
+
+    return unit_cell_factories[cell_type](r)
+
 def create_random_cell(
     cell_type: str,
     composition: Dict[str, float],
@@ -398,10 +407,7 @@ def create_random_cell(
         msg = 'unknown cell_type:{}'.format(cell_type)
         raise ValueError(msg)
 
-    cell = make_super_cell(
-        structure = unit_cell, 
-        sc=supercell
-    )
+    cell = make_super_cell(structure = unit_cell, sc=supercell)
 
     idx_atoms_all = [k for k in range(cell.n_atoms)]
     idx_atoms = {}
@@ -410,23 +416,24 @@ def create_random_cell(
     for symbol in composition_:
         idx_atoms[symbol] = []
         
-        sum_composition = sum([
-            v for k, v in composition_.items() if k not in atoms_processed
-        ])
-        probability = composition_[symbol]/sum_composition
+        sum_remaining = sum([v for k, v in composition_.items() if k not in atoms_processed])
+        probability = composition_[symbol]/sum_remaining
 
-        n_atoms = int(cell.n_atoms * probability)
-        #n_atoms = int(cell.n_atoms * probability) \
-        #    - sum([len(v) for v in idx_atoms.values()])
+        n_atoms_assigned = sum([len(v) for v in idx_atoms.values()])
+        n_atoms = int((cell.n_atoms - n_atoms_assigned) * probability)
 
-        for i_atom in range(n_atoms):
-            idx = np.random.choice(idx_atoms_all, 1).tolist()[0]
-            idx_atoms[symbol].append(idx)
+        idx_atoms[symbol] = np.random.choice(idx_atoms_all, n_atoms, replace=False).tolist()
+        for idx in idx_atoms[symbol]:
             idx_atoms_all.remove(idx)
-            atoms_processed.append(symbol)
+        atoms_processed.append(symbol)
     
     for symbol in idx_atoms:
         for idx_atom in idx_atoms[symbol]:
             cell.atomic_basis[idx_atom].symbol = symbol
+
+    total_n_atoms = 0
+    for k, v in idx_atoms.items():
+        total_n_atoms += len(v)
+    assert total_n_atoms == cell.n_atoms
 
     return cell
