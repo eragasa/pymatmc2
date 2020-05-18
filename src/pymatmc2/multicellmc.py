@@ -29,7 +29,7 @@ from pymatmc2 import MultiCell
 from pymatmc2 import Pymatmc2Log
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import Pymatmc2Results
-from pymatmc2 import Pymatmc2Tarball
+# from pymatmc2 import Pymatmc2Tarball
 from pymatmc2 import Pymatmc2Data
 
 from pymatmc2.utils import clear_folders

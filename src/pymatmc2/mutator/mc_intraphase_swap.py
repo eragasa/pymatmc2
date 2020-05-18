@@ -18,4 +18,9 @@ from pymatmc2.mutator import BaseMultiCellMutator
 class IntraphaseSwapMutator(BaseMultiCellMutator):
     mutate_type = 'intraphase_swap'
     
+    def accept_or_reject(self):
+        pass
+
+    def mutate_multicell(self):
+        pass
     

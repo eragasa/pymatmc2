@@ -197,8 +197,9 @@ class Results(object):
                 self.compositions[i, j] = float(last[k])
             k = (i + 1) * (self.total_cells + 1)
             self.cell_energy[i] = float(last[k])
-        self.ratio = np.array([float(x) / 100
-                               for x in last[-N_CELL - 2:-2]])
+        self.ratio = np.array([
+            float(x) / 100 for x in last[-N_CELL - 2:-2]
+        ])
         self.total_energy, self.probability = [float(x) for x in last[-2:]]
 
     def read_next(self):

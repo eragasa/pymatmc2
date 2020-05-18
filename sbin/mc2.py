@@ -6,17 +6,13 @@ os.environ['LC_ALL'] = 'en_US.UTF-8'
 import click
 import sys
 from crontab import CronTab
-# thVis might be taken care of with a pip install
+# this might be taken care of with a pip install
 sys.path.append('/users/PAA0028/eragasa/repos/pymatmc2/src')
 sys.path.append('/users/PAA0028/eragasa/repos/mexm-base/src')
 from pymatmc2 import MultiCellMonteCarlo
 from pymatmc2 import Pymatmc2Configuration
-# might have to run this command first
-# export LC_ALL=en_US.UTF-8 
 
-
-
-# cron environment read .bashrc or .bash_profile
+# cron environment cannot read .bashrc or .bash_profile
 os.environ['VASP_POTPAW_GGA'] = '/users/PAA0028/eragasa/usr/local/vasp/potpaw/potpaw_PBE.54'
  
 
@@ -79,10 +75,9 @@ def pymatmc2_restart(path):
         pymatmc2_stop(path=path)
     else:
         schedule_cron_job(
-	    command=PYMATMC2_CONTINUE_CMD,
+	        command=PYMATMC2_CONTINUE_CMD,
             description=PYMATMC2_CONTINUE_DESC
         )
-        
 
 def pymatmc2_continue(path):
     os.chdir(path)
