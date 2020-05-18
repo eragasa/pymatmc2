@@ -43,8 +43,6 @@ from pymatmc2.utils import prepare
 # the results file needs to maintain state of the system
 from pymatmc2.mutator import MultiCellMutatorFactory
 
-
-
 class MultiCellMonteCarlo():
     """ Implementation of the (MC)^2
 
