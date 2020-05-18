@@ -140,7 +140,7 @@ class MultiCell:
             X.append(list(self.cell_concentration[c].values()))
 
         X = np.array(X)
-        return X.T
+        return X
 
     @property
     def molar_fraction_total(self) -> Dict[str, float]:
@@ -299,6 +299,16 @@ class MultiCell:
         )
         return c
     
+    @property
+    def is_reduced_rank(self) -> bool:
+        X = self.cell_concentration_matrix
+        nrows, ncols = X.shape
+        rank = linalg.matrix_rank(X)
+        if rank < ncols:
+            return True
+        else:
+            return False
+
     @property
     def phase_molar_fraction(self):
 
