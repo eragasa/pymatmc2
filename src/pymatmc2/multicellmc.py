@@ -424,9 +424,9 @@ class MultiCellMonteCarlo():
             mc_initial.read(path=src_path)
 
             # create candidate multicell         
-            mutator = MultiCellMutateAlgorithmFactory()
-            mutator.configure(configuration=self.configuration)
+            mutator = MultiCellMutatorFactory()
             mutator.configuration = self.configuration
+            
             assert isinstance(mutator.configuration, Pymatmc2Configuration)
             mutate_type, mc_candidate = mutator.mutate_cells(mc_initial)
             mc_candidate.write(path=dst_path)
