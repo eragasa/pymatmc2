@@ -2,3 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+#ignore large VASP files (not used in testing)
+POTCAR
+WAVECAR

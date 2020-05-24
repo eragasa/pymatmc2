@@ -1,0 +1,20 @@
+[2020-05-18 16:33:22.699115] starting pymatmc2 from scratch.
+[2020-05-18 16:33:22.710328] loaded configuration file
+[2020-05-18 16:33:22.712338] removing existing phasespace directory: simulations/800K_0GPa
+[2020-05-18 16:33:22.778497] removing existing results directory: results/800K_0GPa
+[2020-05-18 16:33:22.811427] starting iteration 0
+[2020-05-18 16:33:22.812465] creating simulations...
+[2020-05-18 16:33:23.190315] creating simulations in simulations/800K_0GPa/00000
+[2020-05-18 16:33:23.191245] submitting jobs...
+[2020-05-18 17:53:01.481121] restarting pymatmc2
+[2020-05-18 17:53:01.506516] loaded configuration file
+[2020-05-18 17:53:02.880531] starting iteration 1
+[2020-05-18 17:53:02.881639] creating simulations...
+[2020-05-23 20:38:36.864866] restarting pymatmc2
+[2020-05-23 20:38:36.915713] loaded configuration file
+[2020-05-23 20:38:38.429407] starting iteration 1
+[2020-05-23 20:38:38.430544] creating simulations...
+[2020-05-24 01:27:10.072524] restarting pymatmc2
+[2020-05-24 01:27:10.100120] loaded configuration file
+[2020-05-24 01:27:10.799603] starting iteration 1
+[2020-05-24 01:27:10.801414] creating simulations...
