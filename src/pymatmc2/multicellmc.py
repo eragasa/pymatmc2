@@ -373,35 +373,36 @@ class MultiCellMonteCarlo():
                 self.get_iteration_string(i_iteration)
             )
 
+            multicell.write(path = dst_path)
             msg = 'creating simulations in {}'.format(dst_path)
             self.log(msg)
-            try:
-                multicell.phase_molar_fraction
-                multicell.write(path = dst_path)
-            except linalg.LinAlgError:
-                msg = 'concentration matrix is not full rank'
-                self.log(msg)
-                msg = 'using intraphase_flip to fix concentration matrix'
-                self.log(msg)
+            #try:
+            #    multicell.phase_molar_fraction
+            #    multicell.write(path = dst_path)
+            #except linalg.LinAlgError:
+            #    msg = 'concentration matrix is not full rank'
+            #    self.log(msg)
+            #    msg = 'using intraphase_flip to fix concentration matrix'
+            #    self.log(msg)
 
-                mutator = IntraphaseFlip()
-                mutator.configuration = self.configuration
-                multicell_new = mutator.mutate_multicell(multicell = multicell)
+            #    mutator = IntraphaseFlip()
+            #    mutator.configuration = self.configuration
+            #    multicell_new = mutator.mutate_multicell(multicell = multicell)
 
-                msg = 'found valid multicell'
-                self.log(msg)
-                multicell_new.write(path = dst_path)
+            #    msg = 'found valid multicell'
+            #    self.log(msg)
+            #    multicell_new.write(path = dst_path)
 
-                results_path = os.path.join(
-                    self.results_path,
-                    self.phase_space_name,
-                    self.get_iteration_string(i_iteration)
-                )
-                os.mkdir(results_path)
+            #    results_path = os.path.join(
+            #        self.results_path,
+            #        self.phase_space_name,
+            #        self.get_iteration_string(i_iteration)
+            #    )
+            #    os.mkdir(results_path)
 
-                mutate_type_path = os.path.join(results_path, 'mutate_type')
-                with open(mutate_type_path,'w') as f:
-                    f.write(IntraphaseFlip.mutate_type)
+            #    mutate_type_path = os.path.join(results_path, 'mutate_type')
+            #    with open(mutate_type_path,'w') as f:
+            #        f.write(IntraphaseFlip.mutate_type)
 
         else:
             src_path = os.path.join(
