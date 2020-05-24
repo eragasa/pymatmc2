@@ -155,7 +155,15 @@ class MultiCell:
 
         return molar_fraction_total
 
+    @property
+    def is_rank_deficient(self) -> bool:
+        rank = linalg.matrix_rank(self.cell_concentration_matrix)
+        n_rows, n_cols = self.cell_concentration_matrix.shape
 
+        if rank < n_cols:
+            return True
+        else:
+            return False
 
     def get_simulation_paths(self, path):
         return [os.path.join(path, k) for k in self.simulations]

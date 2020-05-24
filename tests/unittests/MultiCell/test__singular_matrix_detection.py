@@ -1,6 +1,8 @@
 import pytest
 import os
 import shutil
+from numpy import linalg
+
 from mexm.structure import SimulationCell
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import MultiCell
@@ -19,6 +21,7 @@ def test__constructor__from_configuration():
     for k, v in o_mc.cells.items():
         assert isinstance(k ,str)
         assert issubclass(type(v), SimulationCell)
+        
 def dev__constructor__from_configuration():
     src_resource_path = os.path.join('HfZrTaNb', 'resources')
     src_config_path = os.path.join(src_resource_path, 'pymatmc2.config')
@@ -77,7 +80,6 @@ def dev__property__cell_names():
     assert isinstance(o_mc.cell_names, list)
     print(o_mc.cell_names)
 
-
 def dev__singular_matrix_detection__HfZrTaNb():
     src_resource_path = os.path.join('HfZrTaNb', 'resources')
     src_config_path = os.path.join(src_resource_path, 'pymatmc2.config')
@@ -86,15 +88,41 @@ def dev__singular_matrix_detection__HfZrTaNb():
     configuration.read(path=src_config_path)
 
     o_mc = MultiCell.initialize_from_configuration(configuration=configuration)
-    
-    from numpy import linalg
     rank = linalg.matrix_rank(o_mc.cell_concentration_matrix)
     n_rows, n_cols = o_mc.cell_concentration_matrix.shape
     print('rank:{}'.format(rank))
     print('nrows:{}, ncols:{}'.format(n_rows, n_cols))
+
+def test__is_rank_deficient__HfZrTaNb():
+    src_resource_path = os.path.join('HfZrTaNb', 'resources')
+    src_config_path = os.path.join(src_resource_path, 'pymatmc2.config')
+
+    configuration = Pymatmc2Configuration()
+    configuration.read(path=src_config_path)
+
+    o_mc = MultiCell.initialize_from_configuration(configuration=configuration)
+    expected_is_rank_deficient = True
+    assert o_mc.is_rank_deficient == expected_is_rank_deficient
+
+def dev__is_rank_deficient__HfZrTaNb():
+    src_resource_path = os.path.join('HfZrTaNb', 'resources')
+    src_config_path = os.path.join(src_resource_path, 'pymatmc2.config')
+
+    configuration = Pymatmc2Configuration()
+    configuration.read(path=src_config_path)
+
+    o_mc = MultiCell.initialize_from_configuration(configuration=configuration)
+    rank = linalg.matrix_rank(o_mc.cell_concentration_matrix)
+    n_rows, n_cols = o_mc.cell_concentration_matrix.shape
+    print('rank:{}'.format(rank))
+    print('nrows:{}, ncols:{}'.format(n_rows, n_cols))
+
+    is_rank_deficient = o_mc.is_rank_deficient
+    print('is_rank_deficient:{}'.format(is_rank_deficient))
 
 if __name__ == "__main__":
     #dev__constructor__from_configuration()
     #dev__property__symbols__getters()
     #dev__property__cell_names()
     dev__singular_matrix_detection__HfZrTaNb()
+    dev__is_rank_deficient__HfZrTaNb()
