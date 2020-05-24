@@ -427,7 +427,7 @@ class MultiCellMonteCarlo():
             o_mutator.configuration = self.configuration
             o_mutator.determine_mutate_algorithm()
 
-            mutate_type, mc_candidate = mutator.mutate_cells(mc_initial)
+            mutate_type, mc_candidate = o_mutator.mutate_multicell(multicell = mc_initial)
             mc_candidate.write(path=dst_path)
 
             results_path = os.path.join(

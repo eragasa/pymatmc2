@@ -100,8 +100,9 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
         )
         return self.mutate_type, multicell
 
-    def mutate_multicell(self, mutate_type: str,  multicell: MultiCell) -> MultiCell:
-        self.mutate_type = self.determine_mutate_algorithm()
+    def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
+        if self.mutate_type is None:
+            self.mutate_type = self.determine_mutate_algorithm()
         mutator = self.multicell_mutators[self.mutate_type]()
         self.multicell_initial = multicell
         self.multicell_candidate = mutator.mutate_multicell(multicell = multicell)
