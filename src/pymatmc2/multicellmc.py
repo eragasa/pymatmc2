@@ -346,7 +346,7 @@ class MultiCellMonteCarlo():
           
             temperature = self.configuration.temperature
             pressure = self.configuration.pressure
-            mutator = MultiCellMutateAlgorithmFactory.factories[mutate_type]()
+            mutator = MultiCellMutatorFactory.factories[mutate_type]()
             is_accept, mc_final = mutator.accept_or_reject(
                 multicell_initial = mc_initial,
                 multicell_candidate = mc_candidate,

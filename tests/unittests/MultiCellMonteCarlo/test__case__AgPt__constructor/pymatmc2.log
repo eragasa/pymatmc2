@@ -1,0 +1,4 @@
+[2020-05-24 08:12:42.473739] starting pymatmc2 from scratch.
+[2020-05-24 08:12:42.476906] loaded configuration file
+[2020-05-24 08:12:42.476906] removing existing phasespace directory: simulations\400K_0GPa
+[2020-05-24 08:12:42.477907] removing existing results directory: results\400K_0GPa
