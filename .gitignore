@@ -15,3 +15,6 @@ WAVECAR
 
 #ignore pymatmc2 generated files
 pymatmc2.log
+
+#ignore pytest generated files
+.pytest_cache/

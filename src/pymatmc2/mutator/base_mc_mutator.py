@@ -27,6 +27,7 @@ class BaseMultiCellMutator(ABC):
         self._multicell_candidate = None
         self._multicell_final = None
         self._is_accept = None
+
     @property
     def configuration(self) -> Pymatmc2Configuration:
         return self._configuration

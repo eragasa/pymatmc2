@@ -23,7 +23,7 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
 
     @mutate_type.setter
     def mutate_type(self, mutate_type: str):
-        self.mutate_type = mutate_type
+        self._mutate_type = mutate_type
 
     @property
     def multicell_mutators(self):
@@ -44,7 +44,7 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
     def mutation_weights(self) -> List[float]:
         if not isinstance(self.configuration, Pymatmc2Configuration):
             raise TypeError('the configuration attribute has not been set')
-        mutation_weights = [v for v in self.configuration.mutation_weights.values]
+        mutation_weights = [v for v in self.configuration.mutation_weights.values()]
         return mutation_weights
 
     @property
@@ -53,7 +53,9 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
             raise TypeError('the configuration attribute has not been set')
         mutation_weights = self.mutation_weights
         cumulative_weights = []
-        for k in range(len(self.mutation_weights)):
+        
+        n_mutation_types = len(mutation_weights)
+        for k in range(n_mutation_types):
             cum_w = sum(mutation_weights[:k+1]) 
             cumulative_weights.append(cum_w)
         return cumulative_weights
@@ -63,7 +65,7 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
         Returns:
             bool: the mutation type
         """
-        probability = np.random.random
+        probability = np.random.random()
 
         for i, p in enumerate(self.cumulative_weights):
             if probability < p:
