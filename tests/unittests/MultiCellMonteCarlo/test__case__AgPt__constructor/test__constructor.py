@@ -74,3 +74,4 @@ def test__constructor__default(configuration, kwargs_mc2):
     # cleanup
     shutil.rmtree('simulations')
     shutil.rmtree('results')
+    os.remove('pymatmc2.log')

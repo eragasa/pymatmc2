@@ -1,6 +1,6 @@
 {
     "restructuredtext.confPath": "${workspaceFolder}\\doc\\source",
-    "python.pythonPath": "C:\\Users\\eugen\\AppData\\Local\\Continuum\\anaconda3\\python.exe",
+    "python.pythonPath": "C:\\Users\\eugen\\Anaconda3\\python.exe",
     "plantuml.diagramsRoot": "docs/diagrams/src",
     "plantuml.exportOutDir": "docs/diagrams/out"
 }

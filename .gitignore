@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ignore visual studio
+.vscode/settings.json
+
+# ignore virtual environment
+pymatmc2.venv/
+
 #ignore large VASP files (not used in testing)
 POTCAR
 WAVECAR
+
+#ignore pymatmc2 generated files
+pymatmc2.log
