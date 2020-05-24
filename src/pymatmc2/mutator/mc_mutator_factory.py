@@ -58,7 +58,7 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
             cumulative_weights.append(cum_w)
         return cumulative_weights
 
-    def determine_mutate_algorithm(self) -> float:
+    def determine_mutate_algorithm(self) -> str:
         """
         Returns:
             bool: the mutation type
