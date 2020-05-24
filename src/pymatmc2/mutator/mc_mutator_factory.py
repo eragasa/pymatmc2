@@ -9,6 +9,10 @@ from pymatmc2.mutator import BaseMultiCellMutator
 
 class MultiCellMutatorFactory(BaseMultiCellMutator):
 
+    factories = {
+        v.mutate_type: v for v in [IntraphaseFlipMutator, IntraphaseSwapMutator]
+    }
+
     def __init__(self):
         super().__init__()
         self._mutate_type = None
