@@ -84,7 +84,11 @@ class MultiCell:
                 obj.simulations[k].kpoints.read(path=v['kpoints']) 
 
         return obj
-    
+   
+    @property
+    def cell_energies(self):
+        return OrderedDict([(k, v.total_energy) for k, v in self.simulations.items()])
+ 
     @property
     def total_energy(self):
         # see Niu, et al "Multi-cell Monte Carlo method for phase prediction",
@@ -140,8 +144,18 @@ class MultiCell:
             X.append(list(self.cell_concentration[c].values()))
 
         X = np.array(X)
-        return X
+        return X.T
 
+    @property
+    def total_concentration(self) -> Dict[str, float]:
+        assert isinstance(self.configuration, Pymatmc2Configuration)
+
+        sum_total_concentration = sum(self.configuration.total_concentration.values())
+        total_concentration = OrderedDict()
+        for k, v in self.configuration.total_concentration.items():
+           total_concentration[k] = v/sum_total_concentration
+        return total_concentration
+  
     @property
     def molar_fraction_total(self) -> Dict[str, float]:
         assert isinstance(self.configuration, Pymatmc2Configuration)

@@ -108,8 +108,7 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
                     cell.atomic_basis[idx_atom].symbol = new_symbol
                 
                     if isinstance(simulation, VaspSimulation):
-                        rtn_multicell.simulations[phase].poscar \
-                            = Poscar.initialize_from_object(obj=cell)
+                        self.multicell_candidate.simulations[phase].poscar = Poscar.initialize_from_object(obj=cell)
                     else:
                         raise ValueError("unknown simulation type")
                     
