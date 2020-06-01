@@ -1,19 +1,45 @@
 import pytest
+import os
+import platform
 import numpy as np
 from numpy import linalg
 from typing import List
 from typing import Tuple
 from pymatmc2 import Pymatmc2Configuration
-from pymatmc2.concentration_matrix import ConcentrationMatrix
+from pymatmc2 import ConcentrationMatrix
 
 concentration_matrix_ = np.array(
     [
         [1/2, 1/2], 
-        [1/2], [1/2]
+        [1/2, 1/2]
     ]
 )
 
+def get_resource_path():
+    resource_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__))
+    )
+
+def get_configuration_path():
+    configuration_path_dict = {
+        'Windows':'pymatmc2.config.windows',
+        'Mac':'pymatmc2.config.osx',
+        'Linux':'pymatmc2.config.linux'
+    }
+    os_type = platform.system()
+    configuration_path_ = os.path.join(
+        get_resource_path(),
+        configuration_path_dict[os_type]
+    )
+    return configuration_path_
+
 # DEFINE TESTING FIXTURES
+@pytest.fixture
+def resource_path():
+    resource_path_ = os.path.join(
+        os.path.dirname(os.path.abspath(__file__))
+    )
+    return resource_path_
 
 @pytest.fixture
 def configuration_path():

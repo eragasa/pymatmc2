@@ -2,6 +2,8 @@ import numpy as np
 from numpy import linalg
 from typing import Optional
 
+from pymatmc2 import ConcentrationMatrix
+
 class PhaseMolarFraction():
 
     @staticmethod
@@ -17,23 +19,27 @@ class PhaseMolarFraction():
         return not np.any(f < 0)
 
     @staticmethod
-    def is_valid(f):
+    def is_valid(f: np.ndarray, is_debug: Optional[bool] = False):
         tests = [
             PhaseMolarFraction.sums_to_unity,
             PhaseMolarFraction.has_no_negative_components
         ]
 
+        if is_debug:
+            print('sums_to_unity:{}'.format(PhaseMolarFraction.sums_to_unity(f)))
+            print('has_no_negative_components:{}'.format(PhaseMolarFraction.has_no_negative_components(f)))
+
         return all([test(f=f) for test in tests])
 
     @staticmethod
-    def calculate_from_svd(A: np.ndarray, b: np.ndarray, is_debug: Optional[bool] = False):
-        assert isinstance(A, np.ndarray)
-        assert isinstance(b, np.ndarray)
+    def calculate_from_svd(X: np.ndarray, c: np.ndarray, is_debug: Optional[bool] = False):
+        assert isinstance(X, np.ndarray)
+        assert isinstance(c, np.ndarray)
         if is_debug:
-            print('A:\n{}'.format(A))
-            print('b:\n{}'.format(b))
+            print('A:\n{}'.format(X))
+            print('b:\n{}'.format(c))
 
-        U, S, Vt = linalg.svd(A, full_matrices=True)
+        U, S, Vt = linalg.svd(X, full_matrices=True)
         if is_debug:
             print(80*'-')
             print('DECOMPOSITION OF A')
@@ -42,31 +48,36 @@ class PhaseMolarFraction():
             print('Vt\n:{}'.format(Vt))
 
         # test decomposition A
-        m, n = A.shape
+        m, n = X.shape
         if m == n:
-            USV = U @ np.diag(S) @ Vt
+            USVt = U @ np.diag(S) @ Vt
         else:
-            USV = U[:,:n] @ np.diag(S) @ Vt[:m,:]
-        is_USV_equals_A = np.allclose(A, USV)
+            U = U[:, :n]
+            Vt = Vt[:m, :]
+            Sigma = np.zeros(X.shape)
+            for i, v in enumerate(S.tolist()):
+                Sigma[i,i] = v
+            USVt = U @ Sigma @ Vt
+        is_USVt_equals_X = np.allclose(X, USVt)
 
         if is_debug:
             print(80*'-')
             print('TEST DECOMPOSITION OF A')
-            print('USV:\n{}'.format(USV))
-            print('A - USV:\n{}'.format(A-USV))
-            print('is_USV_equals_A:{}'.format(is_USV_equals_A))
+            print('USV:\n{}'.format(USVt))
+            print('A - USV:\n{}'.format(X-USVt))
+            print('is_USV_equals_A:{}'.format(is_USVt_equals_X))
 
         # invert using SVD
         S_inv = np.diag(1/S)
-        A_inv = Vt.T @ S_inv @ U.T
-        b = b.reshape(m, 1)
+        C_inv = Vt.T @ S_inv @ U.T
+        c = c.reshape(m, 1)
 
-        x = np.matrix(A_inv) @ np.matrix(b)
+        f = np.matrix(C_inv) @ np.matrix(c)
         if is_debug:
             print(80*'-')
-            print('svd_solution:\n{}'.format(x))
+            print('svd_solution:\n{}'.format(f))
 
-        return x
+        return f
 
     @staticmethod
     def calculate_from_reduced_svd(A: np.ndarray, b: np.ndarray, is_debug: Optional[bool] = False):
@@ -128,7 +139,77 @@ class PhaseMolarFraction():
         return x
 
     @staticmethod
-    def calculate(A: np.ndarray, b: np.ndarray, E: np.ndarray, is_debug: Optional[bool]=False):
+    def calculate(X: np.ndarray, c: np.ndarray, E: np.ndarray, is_debug: Optional[bool]=False):
+        X0 = X
+        X1 = ConcentrationMatrix.remove_degenerate_compositions(X=X0, is_debug=is_debug)
+
+        m0, n0 = X0.shape
+        m1, n1 = X1.shape
+
+        X1_matrix_rank = linalg.matrix_rank(X0)
+
+        if is_debug:
+            print('X1.shape:\n{}'.format(X1.shape))
+            print('X1.matrix_rank:\n{}'.format(linalg.matrix_rank(X0)))
+
+        if X1_matrix_rank == min(X1.shape):
+            if is_debug:
+                print('with SVD')
+            U, S, Vt = ConcentrationMatrix.SVD(X1, is_debug= is_debug)
+        else:
+            if is_debug:
+                print('with reduced SVD')
+            U, S, Vt = ConcentrationMatrix.reduced_SVD(X1, is_debug = is_debug)
+
+        X_inv = ConcentrationMatrix.invert_using_SVD_components(U, S, Vt)
+        c = c.reshape(m1, 1)
+        f1 = X_inv @ c
+        f1_is_valid = PhaseMolarFraction.is_valid(f=f1)
+        if is_debug:
+            print(80*'-')
+            print('f1:{}'.format(f1))
+            print('f_is_valid:{}'.format(f1_is_valid))
+
+        if n0 != n1:
+            if is_debug:
+               print('duplicate compositions!')
+               print('using lowest energy phase for degenerate composition')
+               print('E:\n{}'.format(E))
+            
+            f0 = np.zeros([1,n0])
+            for idx_n1 in range(n1):
+                c_n1 = X1[:, idx_n1]
+
+                idx_n0_lowest = None
+                energy_n0_lowest = None
+                for idx_n0 in range(n0):
+                    c_n0 = X0[:, idx_n0]
+                    if np.allclose(c_n0, c_n1):
+                        if energy_n0_lowest is None:
+                            idx_n0_lowest = idx_n0
+                            energy_n0_lowest = E[idx_n0]
+                        elif E[idx_n0] < energy_n0_lowest:
+                            idx_n0_lowest = idx_n0
+                            energy_n0_lowest = E[idx_n0]
+                        else:
+                            pass
+                    if is_debug:
+                        print(
+                            'idx_n0:{}, idx_n1:{}, idx_n0_lowest:{}, energy_n0_lowest:{}'.format(
+                                idx_n0, idx_n1, idx_n0_lowest, energy_n0_lowest
+                            )
+                        )
+            f0[0, idx_n0_lowest] = f1[0, idx_n1]
+        else:
+            f0 = f1
+
+        if is_debug:
+            print('f1:{}'.format(f1))
+            print('f0:{}'.format(f0))
+        return f0
+
+    @staticmethod
+    def calculate2(A: np.ndarray, b: np.ndarray, E: np.ndarray, is_debug: Optional[bool]=False):
         m, n = A.shape
         if linalg.matrix_rank(A)  ==min(m, n):
             x = PhaseMolarFraction.calculate_from_svd(A=A, b=b, is_debug=is_debug)

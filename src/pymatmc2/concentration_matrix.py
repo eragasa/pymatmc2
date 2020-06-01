@@ -19,17 +19,17 @@ class ConcentrationMatrix():
         configuration: Optional[Pymatmc2Configuration]=None
     ):
         self._configuration = None
-        self._A = None
+        self._X = None
         self._U = None
         self._S = None
         self._Vt = None
-        self._AInv = None
+        self._XInv = None
         self._SVD_method = None
 
         if configuration is not None: 
             self.configuration = configuration
-        if A is not None: 
-            self.A = A
+        if X is not None: 
+            self.X = X
 
     @property
     def configuration(self):
@@ -43,17 +43,26 @@ class ConcentrationMatrix():
 
 
     @property
-    def A(self) -> np.ndarray:
-        return self._A
+    def X(self) -> np.ndarray:
+        return self._X
 
-    @A.setter
-    def A(self, A: np.ndarray):
-        if isinstance(A, np.ndarray):
-            self._A = A
+    @X.setter
+    def X(self, C: np.ndarray):
+        if isinstance(X, np.ndarray):
+            X_ = deepcopy(X)
         elif isinstance(A, list):
-            self._A = np.array(A)
+            X_ = np.array(X)
         else:
             raise TypeError('cannot convert argument into a numpy array')
+
+        all_sum_to_unity, phase_sums_to_unity = ConcentrationMatrix.cell_concentrations_sum_to_unity(A=A_)
+        if not all_sum_to_unity:
+            msg = "The columns of the concentration matrix do not sum to unity"
+            kwargs = {
+                'phase_sums_to_unity':phase_sums_to_unity
+            }
+            raise Pymatmc2ConcentrationMatrixError(msg, **kwargs)
+        self._X = X_
 
     @property
     def U(self) -> np.ndarray:
@@ -164,39 +173,123 @@ class ConcentrationMatrix():
 
         return is_rank_deficient_
 
-    @staticmethod
-    def SVD(A: np.ndarray, is_debug = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if is_debug:
-            print('A:\n{}'.format(A))
 
-        U, S, Vt = linalg.svd(A, full_matrices=True)
+
+    @staticmethod
+    def SVD(X: np.ndarray, is_debug: Optional[bool] = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if is_debug:
+            print('A:\n{}'.format(X))
+
+        U, S, Vt = linalg.svd(X, full_matrices=True)
+
+        m, n = X.shape
+        if m == n:
+            S = np.diag(S)
+            USVt = U @ S @ Vt
+        else:
+            U = U[:, :n]
+            Vt = Vt[:m, :]
+            sigma_shape = [U.shape[1], Vt.shape[0]]
+            sigma = np.zeros(sigma_shape)
+            for i, v in enumerate(S.tolist()):
+                sigma[i,i] = v
+
+            USVt =  U[:, :n] @ sigma @ Vt[:m, :]
+
         if is_debug:
             print('U:\n{}'.format(U))
             print('S:\n{}'.format(S))
             print('Vt:\n{}'.format(Vt))
-
+            print('USVt:\n{}'.format(USVt))
+            print('reconstruction_passed:{}'.format(np.allclose(USVt, X)))
         return U, S, Vt
 
     @staticmethod
     def SVD_reconstruction_test(
-        A: np.ndarray,
+        X: np.ndarray,
         U: np.ndarray,
         S: np.ndarray,
         Vt: np.ndarray,
         is_debug=False
     ) -> Tuple[bool, np.ndarray]:
 
-        m, n = A.shape
+        m, n = X.shape
         if m == n:
-            USV = U @ np.diag(S) @ Vt
+            USVt = U @ np.diag(S) @ Vt
         else:
-            USV =  U[:, :n] @ np.diag(S) @ Vt[:m, :]
+            USVt =  U[:, :n] @ np.diag(S) @ Vt[:m, :]
+
+        is_passed = np.allclose(X, USVt)
+        if is_debug:
+            print('RECONSTRUCTION TEST')
+            print('X:\n{}'.format(X))
+            print('X - USVt:\n{}'.format(X-USVt))
+            print('is_passed:{}'.format(is_passed))
+        return is_passed, X - USVt
+
+    @staticmethod
+    def invert_using_SVD_components(U: np.ndarray, S: np.ndarray, Vt: np.ndarray) -> np.ndarray:
+        S_inv = np.diag(1/S)
+        X_inv = Vt.T @ S_inv @ U.T
+        return X_inv
+
+
+
+    @staticmethod
+    def reduced_SVD(X: np.ndarray,is_debug: Optional[bool] = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        X (np.ndarray): cell concentration matrix
+        is_debug (bool): Default value is false
+
+        Returns:
+        ========
+        (np.ndarray): U
+        (np.ndarray): S
+        (np.ndarray): V
+        """
+        assert isinstance(X, np.ndarray)
+        if is_debug:
+            print('X:\n{}'.format(X))
 
         if is_debug:
-            print('A:\n{}'.format(A))
-            print('A - USV:\n{}'.format(A-USV))
+            print(80*'=')
+            print('reduced space SVD')
+            print(80*'=')
+            print('X:\n{}'.format(X))
 
-        return np.allclose(A, USV), A - USV
+        U, S, Vt = linalg.svd(X, full_matrices=True)
+        if is_debug:
+            print(80*'-')
+            print('DECOMPOSITION OF X')
+            print('U:\n{}'.format(U))
+            print('S:\n{}'.format(S))
+            print('Vt\n:{}'.format(Vt))
+    
+          # determine singular solutions
+        tolerance = np.max(np.size(X)) * np.spacing(np.max(np.diag(S)))
+        p = np.sum(S > tolerance)
+        if is_debug:
+            print('tolerance:{}'.format(tolerance))
+            print('p:{}'.format(p))
+
+        # reduced space
+        Up = np.matrix(U[:, :p])
+        Vp = np.matrix(Vt[:p, :])
+        Sp = S[:p]
+        Sp_diag = np.diag(S)[:p, :p]
+        if is_debug:
+            print('Up:\n{}'.format(Up))
+            print('Vp:\n{}'.format(Vp))
+            print('Sp:\n{}'.format(Sp))
+   
+        USVp = Up @ Sp_diag @ Vp
+        if is_debug:
+            print('USVp:\n{}'.format(USVp)) 
+            print('Vp.shape:{}'.format(Vp.shape))
+            print('Up.shape:{}'.format(Up.shape))
+            print('Sp.shape:{}'.format(Sp.shape))
+
+        return Up, Sp, Vp
 
     def do_SVD(self, A: Optional[np.ndarray]=None):
         if A is not None:
@@ -220,3 +313,17 @@ class ConcentrationMatrix():
 
         return U, S, Vt
 
+    def remove_degenerate_compositions(X: np.ndarray, is_debug: Optional[bool]=False) -> np.ndarray:
+        if isinstance(X, np.ndarray):
+            X0 = X
+        elif isinstance(X, list):
+            X0 = np.array(X)
+        else:
+            raise TypeError('unable to cast X into numpy array')
+
+        X1 = np.unique(X0, axis=1)
+        if is_debug:
+            print('remove_degenerate_compositions()')
+            print('X0:\n{}'.format(X0))
+            print('X1:\n{}'.format(X1))
+        return X1

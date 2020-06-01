@@ -5,6 +5,8 @@ calculation_type =[
 
 from pymatmc2.logger import Pymatmc2Log
 from pymatmc2.configuration import Pymatmc2Configuration
+from pymatmc2.concentration_matrix import ConcentrationMatrix
+from pymatmc2.phase_molar_fraction import PhaseMolarFraction
 from pymatmc2.multicell import MultiCell
 from pymatmc2.results import Pymatmc2Results
 from pymatmc2.data import Pymatmc2Data

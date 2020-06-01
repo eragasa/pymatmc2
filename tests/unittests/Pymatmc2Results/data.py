@@ -27,7 +27,7 @@ class Pymatmc2Data:
         'mutate_type'
         'initial.fcc1.Au'
         'initial.fcc1.Pt'
-	'initial.fcc1.f'
+    	'initial.fcc1.f'
         'initial.fcc1.toten'
         'initial.fcc1.eatom'
         'initial.fcc2.Au'

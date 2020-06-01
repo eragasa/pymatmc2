@@ -1,26 +1,37 @@
 import pytest
 import numpy as np
 from numpy import linalg
-from phase_molar_fraction import PhaseMolarFraction
-from pymatmc2.cell_concentration_matrix import CellConcentrationMatrix
+from pymatmc2 import ConcentrationMatrix
+from pymatmc2 import PhaseMolarFraction
 
-expected_concentration_matrix = \
+case__4by4__rank2 = {}
+case__4by4__rank2['X'] = np.array(
     [
         [3/4,   3/4, 1/12, 1/12],
-        [1/12, 1/12,  3/4, 3/4],
+        [1/12, 1/12,  3/4,  3/4],
         [1/12, 1/12, 1/12, 1/12],
         [1/12, 1/12, 1/12, 1/12]
     ]
-expected_total_concentration = [0.25, 0.25, 0.25, 0.25]
-expected_cell_energies = [ -543.09136824, -543.29211709, -540.62577658, -543.60646897]
+)
+case__4by4__rank2['c'] = np.array([0.25, 0.25, 0.25, 0.25])
+case__4by4__rank2['E'] = np.array([ -543.09136824, -543.29211709, -540.62577658, -543.60646897])
 
+def test__calculate():
+    is_debug=True
+    X0 = case__4by4__rank2['X']
+    c = case__4by4__rank2['c']
+    E = case__4by4__rank2['E']
 
-def test__inputs_are_valid():
+    f = PhaseMolarFraction.calculate(X=X0, c=c, E=E, is_debug=is_debug)
+    assert isinstance(f, np.ndarray)
 
-is_debug = True
+def dev__calculate():
+    is_debug = True
+    X0 = case__4by4__rank2['X']
+    c = case__4by4__rank2['c']
+    E = case__4by4__rank2['E']
 
-A = np.array(expected_concentration_matrix)
-E = np.array(expected_cell_energies)
-b = np.array(expected_total_concentration)
+    f = PhaseMolarFraction.calculate(X=X0, c=c, E=E, is_debug=is_debug)
 
-PhaseMolarFraction.calculate(A=A, b=b, E=E, is_debug=True)
+if __name__ == "__main__":
+    dev__calculate()

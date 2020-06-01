@@ -6,7 +6,7 @@ from typing import List
 from typing import Tuple
 
 from pymatmc2 import Pymatmc2Configuration
-from pymatmc2.concentration_matrix import ConcentrationMatrix
+from pymatmc2 import ConcentrationMatrix
 from pymatmc2.error import Pymatmc2ConcentrationMatrixError 
 # DEFINE SOME MODULE LEVEL VARIABLES
 # these variables ensure that the same variables used in development routines
