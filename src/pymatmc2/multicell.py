@@ -13,6 +13,7 @@ from mexm.simulation import Simulation
 from mexm.simulation import VaspSimulation
 
 from pymatmc2 import Pymatmc2Configuration
+from pymatmc2 import PhaseMolarFraction
 
 class MultiCellError(BaseException): pass
 
@@ -93,17 +94,22 @@ class MultiCell:
     def total_energy(self):
         # see Niu, et al "Multi-cell Monte Carlo method for phase prediction",
         # npj Computational Materials, Eq (3) with P=0.
-
         # number of phases
+        is_debug = False
         m = len(self.simulations)
         
         # 
         sum_U = 0
+        phase_molar_fraction = self.phase_molar_fraction
         for phase in self.simulations:
             U = self.simulations[phase].total_energy
-            f = self.phase_molar_fraction[phase]
+            f = phase_molar_fraction[phase]
             sum_U += U * f
-
+            if is_debug:
+                print(phase)
+                print('    U:{}'.format(U))
+                print('    f:{}'.format(f))
+                print('    sum_U:{}'.format(sum_U))
         return sum_U
 
     @property
@@ -333,30 +339,26 @@ class MultiCell:
 
     @property
     def phase_molar_fraction(self):
-
+        is_debug = False
         # transform cell molar fraction in a matrix
         X = self.cell_concentration_matrix
 
         # transform total molar fraction into a column vector
-        c = [self.concentration[s] for s in self.symbols]
+        c = np.array([self.concentration[s] for s in self.symbols])
 
-        # Since X c = f
-        # f = X^{-1} . c
-        # solve for phase molar fraction
-        f = np.dot(linalg.inv(X), c)
-        #for k in f:
-        #    if k < 0:
-                # msg = "phase molar fraction cannot be negative\n"
-                # msg += "X:{}\n".format(X)
-                # msg += "c:{}\n".format(c)
-                # msg += "f:{}\n".format(f)
-                # raise MultiCellError(msg)
-        #        from scipy.optimize import nnls
-        #        f, residuals = nnls(X,c)
-        #        break 
-        
-        return {v:f[i] for i,v in enumerate(self.cell_names)}
-        
+        # transform cell energies into an array
+        E = np.array([self.cell_energies[k] for k in self.configuration.cell_names])
+
+       
+        f = PhaseMolarFraction.calculate(X=X, c=c, E=E, is_debug= is_debug) 
+        if is_debug:
+            print('f.shape:{}'.format(f.shape))
+            print('phase_molar_fraction:\n'.format(f.shape))
+
+        try:
+            return {v:f[0,i] for i,v in enumerate(self.cell_names)}
+        except IndexError as e:
+            return {v:f[i,0] for i, v in enumerate(self.cell_names)} 
     def get_number_of_atoms(self, symbol=None):
         n_atoms = 0
         for cell in self.cells.values():

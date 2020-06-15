@@ -2,6 +2,7 @@ from copy import deepcopy
 
 # typing libraries
 from typing import Tuple
+from typing import Optional
 
 # linear algebra imports
 import numpy as np
@@ -63,7 +64,7 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
     
         return rtn_cell
 
-    def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
+    def mutate_multicell(self, multicell: MultiCell, is_debug:Optional[bool] = False) -> MultiCell:
         """ create a new candidate multicell
 
         Create a deepcopy of multicell to the attribute multicell_initial.
@@ -71,6 +72,7 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
 
         Arguments:
             multicell (MultiCell): the initial multicell 
+            is_debug (Optional[bool] = False): if set to True, create debug output to stdout
 
         Returns:
             (MultiCell): the mutated multicell.  This results is also stored
@@ -78,46 +80,40 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         """
         self.multicell_initial = deepcopy(multicell)
         self.multicell_candidate = deepcopy(multicell)
-        while True:
-            try:
-                for phase in multicell.simulations:
-                    simulation = multicell.simulations[phase]
-
-                    # extract the structure file
-                    if isinstance(simulation, VaspSimulation):
-                        if isinstance(simulation.contcar, Poscar):
-                            cell = deepcopy(simulation.contcar)
-                        else:
-                            cell = deepcopy(simulation.poscar)
-                    else:
-                        raise ValueError('unknown simulation type')
-                    assert isinstance(cell, SimulationCell)
-
-                    # mutate the cell
-                    # select atom at random
-                    idx_atoms = list(range(cell.n_atoms))
-                    idx_atom = np.random.choice(idx_atoms, 1)[0]
-                    old_symbol = cell.atomic_basis[idx_atom].symbol
-                    
-                    # flip the symbol
-                    symbols = cell.symbols
-                    symbols.remove(old_symbol)
-                    new_symbol = np.random.choice(symbols, 1)[0]
-                    
-                    # assign new symbol
-                    cell.atomic_basis[idx_atom].symbol = new_symbol
-                
-                    if isinstance(simulation, VaspSimulation):
-                        self.multicell_candidate.simulations[phase].poscar = Poscar.initialize_from_object(obj=cell)
-                    else:
-                        raise ValueError("unknown simulation type")
-                    
-                # this will raise a LinAlg error if rank deficient
-                self.multicell_candidate.phase_molar_fraction
-                break
-            except linalg.LinAlgError:
-                pass
         
+        for phase in multicell.simulations:
+            simulation = multicell.simulations[phase]
+
+            # extract the structure file
+            if isinstance(simulation, VaspSimulation):
+                if isinstance(simulation.contcar, Poscar):
+                    cell = deepcopy(simulation.contcar)
+                else:
+                    cell = deepcopy(simulation.poscar)
+            else:
+                raise ValueError('unknown simulation type')
+            assert isinstance(cell, SimulationCell)
+
+            # mutate the cell
+            # select atom at random
+            idx_atoms = list(range(cell.n_atoms))
+            idx_atom = np.random.choice(idx_atoms, 1)[0]
+            old_symbol = cell.atomic_basis[idx_atom].symbol
+                    
+            # flip the symbol
+            symbols = cell.symbols
+            symbols.remove(old_symbol)
+            new_symbol = np.random.choice(symbols, 1)[0]
+                    
+            # assign new symbol
+            cell.atomic_basis[idx_atom].symbol = new_symbol
+                
+            if isinstance(simulation, VaspSimulation):
+                self.multicell_candidate.simulations[phase].poscar = Poscar.initialize_from_object(obj=cell)
+            else:
+                raise ValueError("unknown simulation type")
+       
+        assert isinstance(self.multicell_candidate, MultiCell) 
         return self.multicell_candidate
 
     def acceptance_probability(
@@ -155,7 +151,8 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell,
         temperature: float,
-        pressure: float
+        pressure: float,
+        is_debug: Optional[bool] = False
     ) -> Tuple[bool, MultiCell]:
         
         if not isinstance(temperature, float):
@@ -168,6 +165,7 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
 
         self.multicell_initial = deepcopy(multicell_initial)
         self.multicell_candidate = deepcopy(multicell_candidate)
+
  
         E0 = self.multicell_initial.total_energy
         E1 = self.multicell_candidate.total_energy

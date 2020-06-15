@@ -334,7 +334,6 @@ class MultiCellMonteCarlo():
             mc_initial = MultiCell()
             mc_initial.configuration = self.configuration
             mc_initial.read(path=src_mc_initial_path)
-
             # read the candidate cell
             mc_candidate = MultiCell()
             mc_candidate.configuration = self.configuration
@@ -347,6 +346,8 @@ class MultiCellMonteCarlo():
             temperature = self.configuration.temperature
             pressure = self.configuration.pressure
             mutator = MultiCellMutatorFactory.factories[mutate_type]()
+            mutator.configuration = self.configuration
+
             is_accept, mc_final = mutator.accept_or_reject(
                 multicell_initial = mc_initial,
                 multicell_candidate = mc_candidate,
@@ -401,6 +402,8 @@ class MultiCellMonteCarlo():
             o_mutator.determine_mutate_algorithm()
 
             mutate_type, mc_candidate = o_mutator.mutate_multicell(multicell = mc_initial)
+            assert isinstance(mutate_type, str)
+            assert isinstance(mc_candidate, MultiCell)
             mc_candidate.write(path=dst_path)
 
             results_path = os.path.join(

@@ -1,7 +1,9 @@
 from typing import List
 from typing import Tuple
+from typing import Optional
 import numpy as np
 from pymatmc2 import Pymatmc2Configuration
+from pymatmc2 import PhaseMolarFraction
 from pymatmc2 import MultiCell
 from pymatmc2.mutator import IntraphaseFlipMutator
 from pymatmc2.mutator import IntraphaseSwapMutator
@@ -74,7 +76,6 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
         self.mutate_type = mutate_type
         return mutate_type
 
-
     def accept_or_reject(self, 
         multicell_initial: MultiCell, 
         multicell_candidate: MultiCell, 
@@ -100,11 +101,29 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
         )
         return self.mutate_type, multicell
 
-    def mutate_multicell(self, multicell: MultiCell) -> MultiCell:
+    def mutate_multicell(self, multicell: MultiCell, is_debug:Optional[bool]=False) -> Tuple[str, MultiCell]:
         if self.mutate_type is None:
             self.mutate_type = self.determine_mutate_algorithm()
-        mutator = self.multicell_mutators[self.mutate_type]()
-        self.multicell_initial = multicell
-        self.multicell_candidate = mutator.mutate_multicell(multicell = multicell)
 
+        self.multicell_initial = multicell
+        
+        # initialize and configure the concrete mutation object
+        mutator = self.multicell_mutators[self.mutate_type]()
+        mutator.configuration = self.configuration
+
+        is_valid = False
+        while not is_valid:
+            self.multicell_candidate = mutator.mutate_multicell(multicell = multicell, is_debug = is_debug)
+            assert isinstance(self.multicell_candidate, MultiCell)
+            X = self.multicell_candidate.cell_concentration_matrix
+            c = np.array(
+                [self.multicell_candidate.total_concentration[k] for k in self.multicell_candidate.symbols]
+            )
+            f = PhaseMolarFraction.calculate(X=X, c=c, E=None, is_debug=is_debug)
+            is_valid = PhaseMolarFraction.is_valid(f)
+
+        assert isinstance(self.mutate_type, str)
+        assert isinstance(self.multicell_candidate, MultiCell)
         return self.mutate_type, self.multicell_candidate
+
+
