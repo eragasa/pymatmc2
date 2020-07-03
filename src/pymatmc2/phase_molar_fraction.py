@@ -8,7 +8,7 @@ class PhaseMolarFraction():
 
     @staticmethod
     def sums_to_unity(f: np.ndarray) -> bool:
-        if np.sum(f) == 1:
+        if abs(np.sum(f) - 1) < 1e-10:
             sums_to_unity = True
         else:
             sums_to_unity = False

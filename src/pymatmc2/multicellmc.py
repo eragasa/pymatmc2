@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Eugene J. Ragasa
 # Distributed under the terms of the MIT License
 
@@ -17,6 +16,7 @@ import os
 import shutil
 import random
 from typing import Dict, Tuple, List
+from typing import Optional
 from copy import deepcopy
 from collections import OrderedDict
 from numpy import linalg
@@ -211,7 +211,7 @@ class MultiCellMonteCarlo():
     def log(self, message: str):
         self.logfile.log(message = message)
     
-    def run(self) -> bool:
+    def run(self, is_debug:Optional[bool] = False) -> bool:
         """
 
         Returns:
@@ -219,22 +219,39 @@ class MultiCellMonteCarlo():
         """
         is_max_iterations = False
         if not self.is_restart:
+            if is_debug:
+                print("starting pymatmc2 from beginning")
             self.run_iteration(i_iteration=0)
         else:
+            if is_debug:
+                print("restarting pymatmc2")
             i_iteration, status = self.determine_current_iteration()
+
+            if is_debug:
+               m = "iteration {}, status = {}".format(
+                   i_iteration, 
+                   status)
+               print(m)
 
             if status == 'running':
                 self.log('iteration {} is still runnning'.format(i_iteration))
                 exit()
             else:
+              
                 if i_iteration > self.configuration.max_iterations:
                     self.log('maximum iterations reached')
                     is_max_iterations = True
                 
                 elif i_iteration >= 0:
                     next_iteration = i_iteration + 1
+                    if is_debug:
+                        print("iteration {}, status = processing".format(
+                            i_iteration)
+                        )
                     self.process_iteration(i_iteration=i_iteration)
-                    self.run_iteration(i_iteration=next_iteration)
+                    if is_debug:
+                        print('iteration {}, status = processing_complete'.format(i_iteration))
+                    self.run_iteration(i_iteration=next_iteration, is_debug=is_debug)
 
                 else:
                     msg = "how are we at iteration {}".format(i_iteration)
@@ -242,12 +259,16 @@ class MultiCellMonteCarlo():
 
         return is_max_iterations
     
-    def run_iteration(self, i_iteration: int):
+    def run_iteration(self, i_iteration: int, is_debug:Optional[bool] = False):
         msg = 'starting iteration {}'.format(i_iteration)
         self.log(msg)
         msg = 'creating simulations...'
         self.log(msg)
-        self.create_simulations(i_iteration=i_iteration)
+        if is_debug:
+            print('iteration {}, status = creating_simulations'.format(i_iteration))
+        self.create_simulations(i_iteration=i_iteration, is_debug=is_debug)
+        if is_debug:
+            print('iteration {}, status = finished_creating_simulations'.format(i_iteration))
         msg = 'submitting jobs...'
         self.log(msg)
         self.create_submission_scripts(i_iteration=i_iteration)
@@ -362,7 +383,7 @@ class MultiCellMonteCarlo():
                 f.write(str(is_accept))
 
 
-    def create_simulations(self, i_iteration:int):
+    def create_simulations(self, i_iteration:int, is_debug=True):
         if i_iteration == 0:
             multicell = MultiCell.initialize_from_configuration(
                 self.configuration
@@ -393,15 +414,35 @@ class MultiCellMonteCarlo():
             )
 
             # read initial multicell
+            if is_debug:
+                print('iteration {}, status = reading_initial_multicell'.format(i_iteration))
             mc_initial = MultiCell()
             mc_initial.configuration = self.configuration
             mc_initial.read(path=src_path)
+            if is_debug:
+                msg = 'iteration {}, status = reading_initial_multicell_complete'
+                print(msg.format(i_iteration))
 
+            if is_debug:
+                msg = 'iteration {}, status = determine_mutate_algorithm'
+                print(msg.format(i_iteration))
             o_mutator = MultiCellMutatorFactory()
             o_mutator.configuration = self.configuration
             o_mutator.determine_mutate_algorithm()
+            if is_debug:
+                msg = 'iteration {}, status = determine_mutate_algorithm_complete'
+                print(msg.format(i_iteration))
 
-            mutate_type, mc_candidate = o_mutator.mutate_multicell(multicell = mc_initial)
+            if is_debug:
+                msg = 'iteration {}, status = mutate_multicell'.format(i_iteration)
+                print(msg)
+            mutate_type, mc_candidate = o_mutator.mutate_multicell(
+                multicell = mc_initial, 
+                is_debug = is_debug
+            )
+            if is_debug:
+                msg = 'iteration {}, status = mutate_multicell_complete'.format(i_iteration)
+                print(msg)
             assert isinstance(mutate_type, str)
             assert isinstance(mc_candidate, MultiCell)
             mc_candidate.write(path=dst_path)

@@ -121,7 +121,9 @@ class MultiCellMutatorFactory(BaseMultiCellMutator):
             )
             f = PhaseMolarFraction.calculate(X=X, c=c, E=None, is_debug=is_debug)
             is_valid = PhaseMolarFraction.is_valid(f)
-
+            if is_debug:
+                print(f)
+                print('is_valid:{}'.format(is_valid))
         assert isinstance(self.mutate_type, str)
         assert isinstance(self.multicell_candidate, MultiCell)
         return self.mutate_type, self.multicell_candidate

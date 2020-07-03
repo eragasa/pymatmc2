@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-#/apps/python/3.6-conda5.2/bin/python
+#!/usr/local/python/3.6-conda5.2/bin/python3
 import os
 
 os.environ['LC_ALL'] = 'en_US.UTF-8'
@@ -16,9 +15,12 @@ from pymatmc2 import Pymatmc2Configuration
 # cron environment cannot read .bashrc or .bash_profile
 os.environ['VASP_POTPAW_GGA'] = '/users/PAA0028/eragasa/usr/local/vasp/potpaw/potpaw_PBE.54'
  
-
+PYTHON3_BIN_PATH = "/usr/local/python/3.6-conda5.2/bin/python3"
 PYMATMC2_CONTINUE_CMD = "{} --continue {}".format(__file__, os.getcwd())
-PYMATMC2_STOP_CMD = "python3 {} --stop".format(os.path.abspath(__file__))
+PYMATMC2_STOP_CMD = "{} {} --stop".format(
+    PYTHON3_BIN_PATH,
+    os.path.abspath(__file__)
+)
 PYMATMC2_CONTINUE_DESC = "pymatmc2_continue"
 
 @click.command()
@@ -82,7 +84,6 @@ def pymatmc2_restart(path):
 
 def pymatmc2_continue(path):
     os.chdir(path)
-    
     kwargs_mc2 = {
         'configuration_path':'pymatmc2.config',
         'results_path':'results',
