@@ -107,7 +107,11 @@ class Poscar(object):
         """"Flip a random atom in this POSCAR."""
         p = Poscar('OSCAR')
         (r1, r2) = np.random.randint(32, size=2)
+
+        # r1 selects the index - EJR
         elem1 = self.atom_types_index[r1]
+
+        # r2 selects the atom
         elem2 = np.random.randint(2)
         if elem1 == elem2:
             return False
@@ -336,9 +340,13 @@ def run_job(folder):
     if not os.path.exists(folder):
         save_log('Cannot find folder {} for VASP.'.format(folder))
         exit()
+
+    #create a context directory
     cwd = os.getcwd()
     os.chdir('{}/{}'.format(cwd, folder))
     os.system('{} > vasp.out'.format(MPI_VASP))
+
+    #return to the context directory
     os.chdir(cwd)
     if not os.path.exists('{}/OSZICAR'.format(folder)):
         save_log('No OSZICAR under {} after running VASP.'.format(folder))
@@ -396,7 +404,7 @@ def prepare():
     r.add_results(RESULTS_FILE)
     r.tar_file()
 
-
+#------- this is the beginning of the script
 if not os.path.exists(INPUT_FILE):
     save_log("No mc2.in file found!")
     exit()

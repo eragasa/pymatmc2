@@ -4,6 +4,7 @@ from typing import Dict
 from pymatmc2 import constants
 from pymatmc2 import Pymatmc2Configuration
 from pymatmc2 import MultiCell
+from pymatmc2 import ChemicalPotential
 
 class Pymatmc2Results():
     valid_mc_types = ['initial', 'candidate', 'final']
@@ -113,6 +114,12 @@ class Pymatmc2Results():
                 msg = msg.format(iteration_info['mutate_type'])
                 raise ValueError(msg)
 
+        for cn in self.configuration.cell_names:
+            cell = mc['final'].simulations[cn].poscar
+            bond_counts = ChemicalPotential.get_cell_bond_counts(cell=cell)
+            for k, v in bond_counts.items():
+                iteration_info['final.{}.{}'.format(cn, k)] = v
+        print(iteration_info)
         return iteration_info
 
 # need to integrate this back in

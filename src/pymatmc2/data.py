@@ -2,6 +2,7 @@ from typing import List
 import pandas as pd 
 from pymatmc2 import MultiCell
 from pymatmc2 import Pymatmc2Configuration
+from pymatmc2 import ChemicalPotential
 
 class Pymatmc2Data():
     """
@@ -71,6 +72,12 @@ class Pymatmc2Data():
             column_name = 'final.f.{}'.format(cn)
             column_names.append(column_name)
         
+        for cn in self.configuration.cell_names:
+            symbols = self.configuration.symbols
+            bond_types = ChemicalPotential.get_bond_types(symbols)
+            for bond_type in bond_types:
+                column_name = 'final.{}.{}'.format(cn, bond_type)
+                column_names.append(column_name)
         return column_names
 
     def write_header(self):
