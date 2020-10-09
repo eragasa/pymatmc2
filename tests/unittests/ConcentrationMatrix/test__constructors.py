@@ -65,21 +65,21 @@ def o_concentration_matrix():
 def test__constructor__no_args():
     o = ConcentrationMatrix()
     assert o.configuration is None
-    assert o.A is None
+    assert o.X is None
     assert o.U is None
     assert o.S is None
     assert o.Vt is None
-    assert o.AInv is None
+    assert o.XInv is None
     assert o.SVD_method is None
 
 def test__constructor__w_configuration_as_Pymatmc2Configuration(configuration):
     o = ConcentrationMatrix(configuration=configuration)
     assert isinstance(o.configuration, Pymatmc2Configuration)
-    assert o.A is None
+    assert o.X is None
     assert o.U is None
     assert o.S is None
     assert o.Vt is None
-    assert o.AInv is None
+    assert o.XInv is None
     assert o.SVD_method is None
 
 def test__constructor__w_configuration_as_invalid_class():
@@ -89,26 +89,26 @@ def test__constructor__w_configuration_as_invalid_class():
     expected_error_msg = "configuration needs to be an instance of Pymatmc2Configuration"
     assert str(e.value) == expected_error_msg
 
-def test__constructor__w_A_as_numpy_array(concentration_matrix):
-    A = concentration_matrix
-    o = ConcentrationMatrix(A=A)
-    assert isinstance(o.A, np.ndarray)
+def test__constructor__w_X_as_numpy_array(concentration_matrix):
+    X = concentration_matrix
+    o = ConcentrationMatrix(X=X)
+    assert isinstance(o.X, np.ndarray)
     assert o.U is None
     assert o.S is None
     assert o.Vt is None
-    assert o.AInv is None
+    assert o.XInv is None
     assert o.SVD_method is None
 
-def test__constructor__w_A_as_list(concentration_matrix):
-    A = concentration_matrix.tolist()
-    assert isinstance(A, list)
+def test__constructor__w_X_as_list(concentration_matrix):
+    X = concentration_matrix.tolist()
+    assert isinstance(X, list)
 
-    o = ConcentrationMatrix(A=A)
-    assert isinstance(o.A, np.ndarray)
+    o = ConcentrationMatrix(X=X)
+    assert isinstance(o.X, np.ndarray)
     assert o.U is None
     assert o.S is None
     assert o.Vt is None
-    assert o.AInv is None
+    assert o.XInv is None
     assert o.SVD_method is None
 
 def test__property__configuration(configuration):

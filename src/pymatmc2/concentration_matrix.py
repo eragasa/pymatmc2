@@ -15,7 +15,7 @@ class ConcentrationMatrix():
 
     def __init__(
         self, 
-        A: Optional[np.ndarray]=None,
+        X: Optional[np.ndarray]=None,
         configuration: Optional[Pymatmc2Configuration]=None
     ):
         self._configuration = None
@@ -47,21 +47,23 @@ class ConcentrationMatrix():
         return self._X
 
     @X.setter
-    def X(self, C: np.ndarray):
+    def X(self, X: np.ndarray):
         if isinstance(X, np.ndarray):
             X_ = deepcopy(X)
-        elif isinstance(A, list):
+        elif isinstance(X, list):
             X_ = np.array(X)
         else:
             raise TypeError('cannot convert argument into a numpy array')
 
-        all_sum_to_unity, phase_sums_to_unity = ConcentrationMatrix.cell_concentrations_sum_to_unity(A=A_)
+        all_sum_to_unity, phase_sums_to_unity = ConcentrationMatrix.cell_concentrations_sum_to_unity(X=X_)
         if not all_sum_to_unity:
             msg = "The columns of the concentration matrix do not sum to unity"
             kwargs = {
                 'phase_sums_to_unity':phase_sums_to_unity
             }
             raise Pymatmc2ConcentrationMatrixError(msg, **kwargs)
+        
+        # assign to private member variable
         self._X = X_
 
     @property
@@ -101,14 +103,14 @@ class ConcentrationMatrix():
             raise TypeError('cannot convert argument into a numpy array')
 
     @property
-    def AInv(self):
-        return self._AInv
+    def XInv(self):
+        return self._XInv
 
-    def _set_AInv(self, AInv: np.ndarray):
-        if isinstance(AInv, np.ndarray):
-            self._AInv = AInv
+    def _set_XInv(self, XInv: np.ndarray):
+        if isinstance(XInv, np.ndarray):
+            self._XInv = XInv
         elif isinstance(AInv, list):
-            self._AInv = np.array(AInv)
+            self._XInv = np.array(XInv)
         else:
             raise TypeError('cannot onvert argument into a numpy array')
 
@@ -126,7 +128,7 @@ class ConcentrationMatrix():
         self._SVD_method = SVD_method
 
     @staticmethod
-    def cell_concentrations_sum_to_unity(A: np.ndarray, is_debug = False) -> Tuple[bool, List[bool]]:
+    def cell_concentrations_sum_to_unity(X: np.ndarray, is_debug = False) -> Tuple[bool, List[bool]]:
         """
         Arguments:
             A (numpy.ndarray): concentration matrix
@@ -134,11 +136,11 @@ class ConcentrationMatrix():
             Tuple[bool, List[bool]
         """
 
-        m, n = A.shape
+        m, n = X.shape
         # m is the number of rows, correspodning with the number of elements
         # n is the number of columns, corresponding with the number of simulation cells
 
-        column_sums = A.sum(axis=0)
+        column_sums = X.sum(axis=0)
         if is_debug: 
             print(column_sums)
 
@@ -151,22 +153,22 @@ class ConcentrationMatrix():
         return all(sums_to_unity), sums_to_unity
 
     @staticmethod
-    def is_rank_deficient(A: np.ndarray, is_debug: Optional[bool] = False) -> bool:
+    def is_rank_deficient(X: np.ndarray, is_debug: Optional[bool] = False) -> bool:
         """
 
         A matrix is rank deficient if it does not have full rank.  A matrix is full rank
         if its rank equals the largest possible for a matrix lesser of the numbers of rows and columns.
 
         Arguments:
-            A (numpy.ndarray): concentration matrix
+            X (numpy.ndarray): concentration matrix
         Returns:
             Tuple[bool, List[
         """
-        m, n = A.shape 
+        m, n = X.shape 
         # m is the number of rows, correspodning with the number of elements
         # n is the number of columns, corresponding with the number of simulation cells
 
-        if linalg.matrix_rank(A) < min(m, n):
+        if linalg.matrix_rank(X) < min(m, n):
            is_rank_deficient_ = True
         else:
            is_rank_deficient_ = False
@@ -176,7 +178,19 @@ class ConcentrationMatrix():
 
 
     @staticmethod
-    def SVD(X: np.ndarray, is_debug: Optional[bool] = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def SVD(
+        X: np.ndarray, 
+        is_debug: Optional[bool] = False
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Arguments:
+            X (np.ndarray): The matrix to be decomposed.
+            is_debug (Optional[bool]):  
+        Returns:
+            (Tuple[np.ndarray, np.ndarray, np.ndarray]): U S Vt portions of the 
+                SVD decomposition of a matrix.
+        """
+
         if is_debug:
             print('A:\n{}'.format(X))
 

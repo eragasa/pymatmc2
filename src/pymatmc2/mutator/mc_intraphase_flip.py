@@ -23,6 +23,28 @@ from pymatmc2.mutator import BaseMultiCellMutator
 class IntraphaseFlipMutator(BaseMultiCellMutator):
     mutate_type = 'intraphase_flip'
 
+    @property
+    def n_atoms_to_flip_max(self):
+        return self.n_atoms_to_flip_max_
+
+    @n_atoms_to_flip_max.setter
+    def n_atoms_to_flip_max(self, n:int):
+        if not isinstance(n, int):
+            raise TypeError('n_atoms_to_flip_max must be an integer')
+        self.n_atoms_to_flip_max_ = n
+
+    @property
+    def n_atoms_to_flip_min(self):
+        return self.n_atoms_to_flip_min_
+
+    @n_atoms_to_flip_min.setter
+    def n_atoms_to_flip_min(self, n:int):
+        if not isinstance(n, int):
+            raise TypeError('n_atoms_to_flip_min must be an integer')
+        self.n_atoms_to_flip_min_ = n
+
+
+    
     def mutate_cell(
         self, 
         cell: SimulationCell,
@@ -64,11 +86,18 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
     
         return rtn_cell
 
-    def mutate_multicell(self, multicell: MultiCell, is_debug:Optional[bool] = False) -> MultiCell:
+    def mutate_multicell(self, 
+        multicell: MultiCell, 
+        n_atoms_to_flip_min:Optional[int] = None,
+        n_atoms_to_flip_max:Optional[int] = None, 
+        is_debug:Optional[bool] = False
+    ) -> MultiCell:
         """ create a new candidate multicell
 
         Create a deepcopy of multicell to the attribute multicell_initial.
-
+        The number of atoms chosen is determined by an equal probability
+        mass function over the open interval of integers from 
+        n_atoms_to_flip_min to n_atoms_to_flip_max
 
         Arguments:
             multicell (MultiCell): the initial multicell 
@@ -80,6 +109,18 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
         """
         self.multicell_initial = deepcopy(multicell)
         self.multicell_candidate = deepcopy(multicell)
+        
+        if n_atoms_to_flip_min is None:
+            n_atoms_to_flip_min = self.n_atoms_to_flip_min
+        else:
+            self.n_atoms_to_flip_min = n_atoms_to_flip_min
+
+        if n_atoms_to_flip_max is None:
+            n_atoms_to_flip_max = self.n_atoms_to_flip_max
+        else:
+            self.n_atoms_to_flip_max = n_atoms_to_flip_max
+                    
+        # determine phases to alter
         
         for phase in multicell.simulations:
             simulation = multicell.simulations[phase]
@@ -95,23 +136,43 @@ class IntraphaseFlipMutator(BaseMultiCellMutator):
             assert isinstance(cell, SimulationCell)
 
             # mutate the cell
+            # determine number of atoms to flip
+            n_atoms_to_flip = 0
+            if n_atoms_to_flip_min == n_atoms_to_flip_max:
+                n_atoms_to_flip == n_atoms_to_flip_min
+            elif n_atoms_to_flip_max > n_atoms_to_flip_min:
+                n_atoms_to_flip_options = np.linspace(
+                    start=n_atoms_to_flip_min, 
+                    stop=n_atoms_to_flip_max,
+                    num=n_atoms_to_flip_max - n_atoms_to_flip_min
+                )
+                n_atoms_to_flip = np.random.choice(n_atoms_to_flip_options, 1)
+            else:
+                msg = 'n_atoms_to_flip ({}) must be less than n_atoms_flip_max ({})'
+                raise ValueError(
+                    msg.format(
+                        n_atoms_to_flip_min,
+                        n_atoms_to_flip_max
+                    )
+                )
+
             # select atom at random
             idx_atoms = list(range(cell.n_atoms))
-            idx_atom = np.random.choice(idx_atoms, 1)[0]
-            old_symbol = cell.atomic_basis[idx_atom].symbol
+            idx_atoms_to_flip = np.random.choice(idx_atoms, n_atoms_to_flip)[0]
+            old_symbols = cell.atomic_basis[idx_atoms_to_flip].symbol
                     
             # flip the symbol
-            symbols = cell.symbols
-            symbols.remove(old_symbol)
-            new_symbol = np.random.choice(symbols, 1)[0]
+            for old_symbol in old_symbols:
+                symbols = cell.symbols
+                symbols.remove(old_symbol)
+                new_symbol = np.random.choice(symbols, 1)[0]
                     
-            # assign new symbol
-            cell.atomic_basis[idx_atom].symbol = new_symbol
-                
-            if isinstance(simulation, VaspSimulation):
-                self.multicell_candidate.simulations[phase].poscar = Poscar.initialize_from_object(obj=cell)
-            else:
-                raise ValueError("unknown simulation type")
+                # assign new symbol
+                cell.atomic_basis[idx_atom].symbol = new_symbol
+                if isinstance(simulation, VaspSimulation):
+                    self.multicell_candidate.simulations[phase].poscar = Poscar.initialize_from_object(obj=cell)
+                else:
+                    raise ValueError("unknown simulation type")
        
         assert isinstance(self.multicell_candidate, MultiCell) 
         return self.multicell_candidate
