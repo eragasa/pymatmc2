@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# External-calculator and generated artifacts
+POTCAR
+WAVECAR
+CHGCAR
+OUTCAR
+vasprun.xml
+OSZICAR
+CONTCAR
+pymatmc2.log
+results/
+simulations/
