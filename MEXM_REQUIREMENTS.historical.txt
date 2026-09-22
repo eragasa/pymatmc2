@@ -1,0 +1,15 @@
+ase>=3.15.0
+flake8>=3.5.0
+matplotlib>=3.0.0
+numpy>=1.14.2
+numpydoc>=0.7.0
+pandas>=0.22.0
+pyflakes>=1.6.0
+pylint>=1.8.2
+pytest>=3.3.2
+PyYAML>=3.12
+scikit-learn>=0.19.1
+scipy>=1.0.0
+deprecation>=2.0.7
+mysql-connector>=2.2.9
+psycopg2>=2.8.4

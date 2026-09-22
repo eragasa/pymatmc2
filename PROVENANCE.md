@@ -28,6 +28,25 @@ The active recovery includes 143 checksum-verified source files comprising:
 
 Repository-relative paths are retained.
 
+## Bundled historical dependency
+
+The recovered source has direct imports of the separate historical `mexm`
+project. To preserve that dependency locally, 133 checksum-verified Python
+files from `mexm` commit
+`3963a1a30ba1595fba69cd0f791dc31fe2e08f7c` are bundled under `src/mexm/`.
+This dependency has its own provenance, identity manifests, historical
+requirements, and retained MIT notice:
+
+- `MEXM_PROVENANCE.md`
+- `MEXM_SOURCE_SHA256SUMS`
+- `MEXM_SOURCE_GIT_MODES`
+- `MEXM_REQUIREMENTS.historical.txt`
+- `MEXM_LICENSE`
+
+The `mexm` bundle is not counted among the 143 `pymatmc2` recovery files above.
+Five incomplete `mexm` package files are retained only under
+`references/mexm-broken/`.
+
 ## Excluded boundary
 
 The recovery excludes historical calculator data and generated artifacts,

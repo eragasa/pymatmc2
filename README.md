@@ -25,10 +25,26 @@ historical research software: recovery preserves source but does not establish
 current executability, numerical verification, scientific validation, or
 support for production calculations.
 
+## Bundled historical dependency
+
+`pymatmc2` directly depends on the historical `mexm` project for structure
+representations, VASP I/O, simulation objects, configuration parsing, and job
+submission. A source-only snapshot of `mexm` commit
+`3963a1a30ba1595fba69cd0f791dc31fe2e08f7c` is therefore bundled at
+`src/mexm/`.
+
+The bundle contains 133 checksum-verified package files. Five syntactically
+incomplete upstream files are preserved separately under
+`references/mexm-broken/`. See `MEXM_PROVENANCE.md` and
+`MEXM_SOURCE_SHA256SUMS` for the exact boundary and identities. Historical
+package requirements are retained in `MEXM_REQUIREMENTS.historical.txt`; they
+have not been resolved or validated against current Python versions.
+
 ## Licensing
 
 The recovered `pymatmc2` source is distributed under the MIT License; see
-`LICENSE`.
+`LICENSE`. The bundled historical `mexm` source is also MIT-licensed under its
+own retained notice in `MEXM_LICENSE`.
 
 The non-operational historical reference under `references/mc2/` is separate.
 It records an unsuccessful MPI-spawn experiment derived from GPL-licensed
