@@ -1,7 +1,47 @@
 # pymatmc2
 
-`pymatmc2` is a historical Python implementation of a multi-cell Monte Carlo
-workflow for searching compositional space among competing phases.
+`pymatmc2` is my Python implementation of the Multi-Cell Monte Carlo
+(MC²) approach developed by Maryam Ghazisaeidi and collaborators [1–3].
+The method searches the compositional space of competing crystalline phases to
+study phase stability and coexistence in alloys.
+
+## Project context
+
+I was a postdoctoral researcher at The Ohio State University from 2020 to 2021,
+during the COVID-19 pandemic. I have restored and updated this repository in
+preparation for returning to this problem and exploring additional mechanisms
+within the MC² framework. That future development is planned work; the
+current repository remains a recovered historical implementation and should
+not be interpreted as evidence that those mechanisms are already implemented
+or validated.
+
+## Installation
+
+Installation is currently intended for source-based development rather than a
+stable release:
+
+```console
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install --editable .
+```
+
+Package and dependency metadata are maintained in `pyproject.toml`. See
+[`docs/installation.md`](docs/installation.md) for optional dependencies,
+verification, external-software requirements, and known limitations.
+
+The current source baseline is **v0.1**. This version identifies the recovered,
+installable starting point for renewed development; it does not represent
+scientific validation of the implementation.
+
+## Documentation
+
+- [Documentation index](docs/index.md)
+- [Installation](docs/installation.md)
+- [Repository structure](docs/repository-structure.md)
+- [Development guide](docs/development.md)
+- [Scientific background](docs/scientific-background.md)
 
 ## Recovery status
 
@@ -53,13 +93,19 @@ abICS code and is distributed under GPL-3.0-or-later. It is not part of the
 references under `references/broken/` remain covered by the MIT License but are
 explicitly excluded from supported source.
 
-## Scientific attribution
+## References
 
-The multi-cell Monte Carlo method is attributed to:
+1. C. Niu, W. Windl, and M. Ghazisaeidi, “Multi-Cell Monte Carlo Relaxation
+   method for predicting phase stability of alloys,” *Scripta Materialia*
+   **132**, 9–12 (2017).
+   <https://doi.org/10.1016/j.scriptamat.2017.01.001>
+2. C. Niu, Y. Rao, W. Windl, and M. Ghazisaeidi, “Multi-cell Monte Carlo method
+   for phase prediction,” *npj Computational Materials* **5**, 120 (2019).
+   <https://doi.org/10.1038/s41524-019-0259-z>
+3. E. Antillon and M. Ghazisaeidi, “Efficient determination of solid-state
+   phase equilibrium with the multicell Monte Carlo method,” *Physical Review
+   E* **101**, 063306 (2020).
+   <https://doi.org/10.1103/PhysRevE.101.063306>
 
-C. Niu, Y. Rao, W. Windl, and M. Ghazisaeidi, “Multi-cell Monte Carlo method
-for phase prediction,” *npj Computational Materials* **5**, 120 (2019).
-<https://doi.org/10.1038/s41524-019-0259-z>
-
-This citation identifies the scientific method. It does not imply endorsement
-of this historical implementation by the article's authors.
+These papers define and develop the scientific method that motivated this
+implementation. This repository does not imply endorsement by their authors.

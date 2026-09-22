@@ -47,6 +47,13 @@ The `mexm` bundle is not counted among the 143 `pymatmc2` recovery files above.
 Five incomplete `mexm` package files are retained only under
 `references/mexm-broken/`.
 
+## Post-recovery packaging
+
+The recovered root `setup.py` and `requirements.txt` were empty placeholders.
+They were removed when `pyproject.toml` became the sole installation and
+dependency metadata surface. The historical `setup.py` identity remains in
+`SOURCE_SHA256SUMS`; Git history preserves both empty placeholders.
+
 ## Excluded boundary
 
 The recovery excludes historical calculator data and generated artifacts,
