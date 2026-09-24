@@ -10,7 +10,9 @@ pymatmc2/
 ├── doc/                Historical Sphinx configuration fragment
 ├── references/         Non-operational historical material
 ├── sbin/               Recovered command-line scripts
+├── devtools/           Historical offline-artifact selection policy
 ├── pyproject.toml      Installation and dependency metadata
+├── OFFLINE_ARTIFACTS.md  Private preservation evidence and limits
 ├── PROVENANCE.md       pymatmc2 recovery boundary
 └── MEXM_PROVENANCE.md  mexm recovery boundary
 ```
@@ -51,4 +53,6 @@ work must be deterministic and must not launch external calculators or submit
 scheduler jobs.
 
 Large generated calculation trees, pseudopotentials, wavefunctions, restart
-files, and databases do not belong in this repository.
+files, and databases do not belong in this repository. Selected historical
+bytes remain privately recoverable under the policy and limitations documented
+in `OFFLINE_ARTIFACTS.md`; they are never package or test inputs.

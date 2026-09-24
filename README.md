@@ -53,8 +53,10 @@ pre-recovery identities are listed in `SOURCE_SHA256SUMS`.
 The historical `develop` tree also contained gigabytes of generated calculator
 and simulation output. Those outputs are deliberately not restored here. In
 particular, this recovery excludes recorded `OUTCAR`, `vasprun.xml`, restart,
-wavefunction, generated-result, and other calculation-artifact trees. See
-`PROVENANCE.md` for the exact recovery and exclusion boundary.
+wavefunction, generated-result, and other calculation-artifact trees. Selected
+generated and restricted bytes remain privately recoverable through the checksum-bound bundle
+described in `OFFLINE_ARTIFACTS.md`. See `PROVENANCE.md` for the exact recovery
+and exclusion boundary.
 
 Known incomplete or syntactically invalid historical files are preserved under
 `references/broken/` rather than admitted into the package or maintained test

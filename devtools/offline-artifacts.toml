@@ -1,0 +1,64 @@
+schema_version = 1
+
+[[rules]]
+kind = "path-prefix"
+reason = "generated-documentation-build"
+values = ["doc/build"]
+
+[[rules]]
+kind = "exact-name"
+reason = "restricted-vasp-pseudopotential"
+values = ["POTCAR"]
+
+[[rules]]
+kind = "exact-name"
+reason = "generated-calculator-output"
+values = [
+    "CHG",
+    "CHGCAR",
+    "CONTCAR",
+    "DOSCAR",
+    "EIGENVAL",
+    "IBZKPT",
+    "OSZICAR",
+    "OUTCAR",
+    "PCDAT",
+    "PROCAR",
+    "REPORT",
+    "WAVECAR",
+    "XDATCAR",
+    "vasp.log",
+    "vasp.out",
+    "vasprun.xml",
+]
+
+[[rules]]
+kind = "exact-name"
+reason = "generated-workflow-state"
+values = [
+    "is_accepted",
+    "job.err",
+    "job.out",
+    "jobComplete",
+    "jobCompleted",
+    "jobSubmitted",
+    "mutate_type",
+]
+
+[[rules]]
+kind = "exact-name"
+reason = "generated-pymatmc2-result"
+values = [
+    "pymatmc2.log",
+    "pymatmc2.results",
+]
+
+[[rules]]
+kind = "path-regex"
+reason = "python-cache"
+values = ['(?:.*/)?__pycache__/.*']
+
+[[rules]]
+kind = "name-regex"
+reason = "python-cache"
+values = ['.*\.py[co]$']

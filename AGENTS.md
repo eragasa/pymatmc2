@@ -19,6 +19,7 @@ explicit tests and scientific evidence.
 | pymatmc2 recovery provenance | `PROVENANCE.md` |
 | mexm recovery provenance | `MEXM_PROVENANCE.md` |
 | Historical and excluded material | `references/` |
+| Offline artifact policy and evidence | `devtools/offline-artifacts.toml` and `OFFLINE_ARTIFACTS.md` |
 | Historical Sphinx fragment | `doc/` |
 
 Read the relevant provenance record before changing recovered source or moving
@@ -32,6 +33,9 @@ files across these boundaries.
   for the bundled `mexm` snapshot.
 - Material beneath `references/` is non-operational historical evidence. Do not
   import it into active packages or silently repair it in place.
+- `OFFLINE_ARTIFACT_SHA256SUMS` records private historical artifact identities.
+  Do not restore those bytes into the maintained tree or use them as package or
+  test inputs.
 - Keep the GPL-licensed `references/mc2/` material separate from the
   MIT-licensed active packages.
 - Do not add pseudopotentials, wavefunctions, calculator outputs, restart data,

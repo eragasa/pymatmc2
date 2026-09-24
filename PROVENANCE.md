@@ -5,7 +5,8 @@
 - Repository: `https://github.com/eragasa/pymatmc2`
 - Historical branch: `develop`
 - Source commit: `3063f031301c04e395cb9d7bc5064f2a52e1110c`
-- Source tree: `54866bd536c8131b1932354d61f1ff33ae881a69`
+- Commit tree: `fd9788560365e93faae596ac91f2530aa6bd92a8`
+- `src/pymatmc2` subtree: `54866bd536c8131b1932354d61f1ff33ae881a69`
 - Commit date: `2020-10-09T17:22:25-04:00`
 - Recovery branch: `master`
 - Recovery date: `2026-09-23`
@@ -61,6 +62,11 @@ including large VASP output trees, wavefunctions, restart data, generated
 results, caches, and databases. The historical `develop` Git object remains the
 identity for those omitted files; omission does not assert that they are
 unimportant or independently reproducible.
+
+A repository-owned policy selected 3,191 of those generated or restricted files
+for private offline preservation. `OFFLINE_ARTIFACTS.md` records the exact
+archive and recovery evidence. The private bundle complements Git history; it
+does not alter the maintained source boundary or authorize redistribution.
 
 The initial `master` implementation is retained separately under
 `references/master-initial/` rather than mixed into the later `develop`

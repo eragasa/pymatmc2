@@ -11,6 +11,7 @@ not yet presented as a validated production package.
 - [Repository structure](repository-structure.md)
 - [Development guide](development.md)
 - [Scientific background](scientific-background.md)
+- [Offline artifact preservation](../OFFLINE_ARTIFACTS.md)
 
 ## Status
 
@@ -26,5 +27,6 @@ license external calculators, supply pseudopotentials, configure an HPC
 scheduler, reproduce a published calculation, or establish scientific
 validation.
 
-For exact recovery boundaries, see [`PROVENANCE.md`](../PROVENANCE.md) and
-[`MEXM_PROVENANCE.md`](../MEXM_PROVENANCE.md).
+For exact recovery boundaries, see [`PROVENANCE.md`](../PROVENANCE.md),
+[`MEXM_PROVENANCE.md`](../MEXM_PROVENANCE.md), and
+[`OFFLINE_ARTIFACTS.md`](../OFFLINE_ARTIFACTS.md).
